@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gestor_Digital_de_Votantes.Models;
+namespace SGE.Models;
 
 [Table("asignaciones")]
 public class Asignacion
@@ -18,10 +18,10 @@ public class Asignacion
     public Referente Referente { get; set; } = null!;
 
     [Required]
-    [Column("persona_dni")]
-    public long PersonaDni { get; set; }
+    [Column("persona_id")]
+    public int PersonaId { get; set; }
 
-    [ForeignKey(nameof(PersonaDni))]
+    [ForeignKey(nameof(PersonaId))]
     public Persona Persona { get; set; } = null!;
 
     [Required]

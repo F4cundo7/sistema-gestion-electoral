@@ -1,12 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gestor_Digital_de_Votantes.Models;
+namespace SGE.Models;
 
 [Table("personas")]
 public class Persona
 {
     [Key]
+    [Column("id")]
+    public int Id { get; set; }
     [Column("dni")]
     public long Dni { get; set; }
 
@@ -48,4 +50,10 @@ public class Persona
     public Referente? Referente { get; set; }
 
     public Asignacion? Asignacion { get; set; }
+    [MaxLength(100)]
+    [Column("cambio")]
+    public string? Cambio { get; set; }
+    [MaxLength(500)]
+    [Column("observaciones")]
+    public string? Observaciones { get; set; }
 }

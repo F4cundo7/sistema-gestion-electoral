@@ -1,4 +1,4 @@
-namespace Gestor_Digital_de_Votantes.Models;
+namespace SGE.Models;
 
 public class ErrorViewModel
 {

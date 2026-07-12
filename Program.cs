@@ -1,4 +1,4 @@
-using Gestor_Digital_de_Votantes.Data;
+using SGE.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
