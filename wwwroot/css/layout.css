@@ -1,0 +1,225 @@
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+}
+
+.app-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1000;
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    background-color: var(--color-sidebar);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    height: var(--header-height);
+    padding: 0 var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--color-text-light);
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.sidebar-brand-link:hover {
+    color: var(--color-text-light);
+}
+
+.sidebar-brand-link i {
+    font-size: 1.5rem;
+    color: #60a5fa;
+}
+
+.sidebar-navigation {
+    padding: var(--spacing-lg) 14px;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.sidebar-link:hover {
+    color: var(--color-text-light);
+    background-color: var(--color-sidebar-hover);
+}
+
+.sidebar-link i {
+    width: 20px;
+    font-size: 1.15rem;
+    text-align: center;
+}
+
+.sidebar-link.active {
+    color: var(--color-text-light);
+    background-color: var(--color-primary);
+}
+
+.app-main {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - var(--sidebar-width));
+    min-height: 100vh;
+    margin-left: var(--sidebar-width);
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--header-height);
+    padding: 12px var(--spacing-xl);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.app-header-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.app-header-subtitle {
+    margin: 3px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.app-header-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.app-header-user i {
+    color: var(--color-text-secondary);
+    font-size: 1.65rem;
+}
+
+.app-content {
+    flex: 1;
+    width: 100%;
+    padding: var(--spacing-xl);
+}
+
+.app-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    padding: var(--spacing-md) var(--spacing-xl);
+    color: var(--color-text-secondary);
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 991.98px) {
+    .app-sidebar {
+        width: var(--sidebar-width-tablet);
+    }
+
+    .sidebar-brand {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .sidebar-brand-link span,
+    .sidebar-link span {
+        display: none;
+    }
+
+    .sidebar-brand-link i {
+        font-size: 1.7rem;
+    }
+
+    .sidebar-navigation {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+
+    .sidebar-link {
+        justify-content: center;
+        padding: 13px;
+    }
+
+    .app-main {
+        width: calc(100% - var(--sidebar-width-tablet));
+        margin-left: var(--sidebar-width-tablet);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .app-sidebar {
+        width: var(--sidebar-width-mobile);
+    }
+
+    .app-main {
+        width: calc(100% - var(--sidebar-width-mobile));
+        margin-left: var(--sidebar-width-mobile);
+    }
+
+    .app-header {
+        padding: 12px 18px;
+    }
+
+    .app-header-title {
+        font-size: 1rem;
+    }
+
+    .app-header-subtitle,
+    .app-header-user span {
+        display: none;
+    }
+
+    .app-content {
+        padding: 20px var(--spacing-md);
+    }
+
+    .app-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+        padding: 14px 18px;
+    }
+}

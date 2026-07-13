@@ -1,8 +1,110 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="dashboard-header">
+    <div>
+        <h2 class="dashboard-title">Dashboard</h2>
+        <p class="dashboard-description">
+            Resumen general del Sistema de Gestión Electoral.
+        </p>
+    </div>
+
+    <div class="dashboard-date">
+        <i class="bi bi-calendar3"></i>
+        <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+    </div>
+</section>
+
+<section class="dashboard-stats">
+    <article class="stat-card">
+        <div class="stat-card-icon stat-card-icon-primary">
+            <i class="bi bi-person-badge"></i>
+        </div>
+
+        <div class="stat-card-content">
+            <span class="stat-card-label">Referentes</span>
+            <strong class="stat-card-value">0</strong>
+        </div>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-icon stat-card-icon-success">
+            <i class="bi bi-person-check"></i>
+        </div>
+
+        <div class="stat-card-content">
+            <span class="stat-card-label">Votantes</span>
+            <strong class="stat-card-value">0</strong>
+        </div>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-icon stat-card-icon-warning">
+            <i class="bi bi-car-front"></i>
+        </div>
+
+        <div class="stat-card-content">
+            <span class="stat-card-label">Movilizadores</span>
+            <strong class="stat-card-value">0</strong>
+        </div>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-icon stat-card-icon-info">
+            <i class="bi bi-building"></i>
+        </div>
+
+        <div class="stat-card-content">
+            <span class="stat-card-label">Escuelas</span>
+            <strong class="stat-card-value">0</strong>
+        </div>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-icon stat-card-icon-secondary">
+            <i class="bi bi-diagram-3"></i>
+        </div>
+
+        <div class="stat-card-content">
+            <span class="stat-card-label">Circuitos</span>
+            <strong class="stat-card-value">0</strong>
+        </div>
+    </article>
+</section>
+
+<section class="dashboard-grid">
+    <article class="dashboard-panel">
+        <div class="dashboard-panel-header">
+            <div>
+                <h3>Distribución general</h3>
+                <p>Resumen de personas registradas por rol.</p>
+            </div>
+
+            <i class="bi bi-bar-chart-line"></i>
+        </div>
+
+        <div class="dashboard-empty-state">
+            <i class="bi bi-pie-chart"></i>
+            <strong>Sin datos disponibles</strong>
+            <span>Los gráficos se mostrarán cuando el sistema tenga información.</span>
+        </div>
+    </article>
+
+    <article class="dashboard-panel">
+        <div class="dashboard-panel-header">
+            <div>
+                <h3>Actividad reciente</h3>
+                <p>Últimos movimientos realizados en el sistema.</p>
+            </div>
+
+            <i class="bi bi-clock-history"></i>
+        </div>
+
+        <div class="dashboard-empty-state">
+            <i class="bi bi-inbox"></i>
+            <strong>No hay actividad reciente</strong>
+            <span>Las acciones de los usuarios aparecerán en este espacio.</span>
+        </div>
+    </article>
+</section>
