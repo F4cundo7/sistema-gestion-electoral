@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SGE.Models;
+namespace SGE.Models.Entities;
 
 [Table("personas")]
 public class Persona
@@ -49,11 +49,25 @@ public class Persona
 
     public Referente? Referente { get; set; }
 
-    public Asignacion? Asignacion { get; set; }
+    public Movilizador? Movilizador { get; set; }
+
+    public AsignacionVotante? AsignacionVotante { get; set; }
+
     [MaxLength(100)]
     [Column("cambio")]
     public string? Cambio { get; set; }
     [MaxLength(500)]
     [Column("observaciones")]
     public string? Observaciones { get; set; }
+    
+    [Column("id_seccion")]
+    public int? IdSeccion { get; set; }
+
+    [MaxLength(250)]
+    [Column("domicilio_escuela")]
+    public string? DomicilioEscuela { get; set; }
+
+    [MaxLength(100)]
+    [Column("localidad_escuela")]
+    public string? LocalidadEscuela { get; set; }
 }

@@ -1,0 +1,1604 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex 1d7bb84..3999bd1 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -15,6 +15,7 @@[m [mappsettings.Development.json[m
+ [m
+ # Logs[m
+ *.log[m
+[32m+[m[32m*.xlsx[m
+ [m
+ # Sistema operativo[m
+ .DS_Store[m
+[1mdiff --git a/DTOs/Importacion/ResultadoImportacionDto.cs b/DTOs/Importacion/ResultadoImportacionDto.cs[m
+[1mindex 41715cf..cb1e315 100644[m
+[1m--- a/DTOs/Importacion/ResultadoImportacionDto.cs[m
+[1m+++ b/DTOs/Importacion/ResultadoImportacionDto.cs[m
+[36m@@ -7,9 +7,8 @@[m [mpublic class ResultadoImportacionDto[m
+     public int FilasLeidas { get; set; }[m
+ [m
+     public int PersonasCreadas { get; set; }[m
+[31m-[m
+     public int PersonasActualizadas { get; set; }[m
+[31m-[m
+[32m+[m[32m    public int PersonasSinCambios { get; set; }[m
+     public int FilasOmitidas { get; set; }[m
+ [m
+     public DateTime FechaInicio { get; set; }[m
+[36m@@ -17,6 +16,11 @@[m [mpublic class ResultadoImportacionDto[m
+     public DateTime FechaFin { get; set; }[m
+ [m
+     public List<ErrorImportacionDto> Errores { get; set; } = [];[m
+[32m+[m[32m    public int TotalProcesadas =>[m
+[32m+[m[32m        PersonasCreadas +[m
+[32m+[m[32m        PersonasActualizadas +[m
+[32m+[m[32m        PersonasSinCambios;[m
+[32m+[m
+ [m
+     public TimeSpan Duracion => FechaFin - FechaInicio;[m
+ [m
+[1mdiff --git a/Data/ApplicationDbContext.cs b/Data/ApplicationDbContext.cs[m
+[1mindex 66552f6..4275f7e 100644[m
+[1m--- a/Data/ApplicationDbContext.cs[m
+[1m+++ b/Data/ApplicationDbContext.cs[m
+[36m@@ -1,5 +1,5 @@[m
+ using Microsoft.EntityFrameworkCore;[m
+[31m-using SGE.Models;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Data;[m
+ [m
+[36m@@ -13,7 +13,9 @@[m [mpublic class ApplicationDbContext : DbContext[m
+ [m
+     public DbSet<Persona> Personas => Set<Persona>();[m
+     public DbSet<Referente> Referentes => Set<Referente>();[m
+[31m-    public DbSet<Asignacion> Asignaciones => Set<Asignacion>();[m
+[32m+[m[32m    public DbSet<Movilizador> Movilizadores => Set<Movilizador>();[m
+[32m+[m[32m    public DbSet<AsignacionVotante> AsignacionesVotantes[m
+[32m+[m[32m        => Set<AsignacionVotante>();[m
+ [m
+     protected override void OnModelCreating(ModelBuilder modelBuilder)[m
+     {[m
+[1mdiff --git a/Data/Configurations/AsignacionConfiguration.cs b/Data/Configurations/AsignacionConfiguration.cs[m
+[1mdeleted file mode 100644[m
+[1mindex 692319d..0000000[m
+[1m--- a/Data/Configurations/AsignacionConfiguration.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,48 +0,0 @@[m
+[31m-using Microsoft.EntityFrameworkCore;[m
+[31m-using Microsoft.EntityFrameworkCore.Metadata.Builders;[m
+[31m-using SGE.Models;[m
+[31m-[m
+[31m-namespace SGE.Data.Configurations;[m
+[31m-[m
+[31m-public class AsignacionConfiguration[m
+[31m-    : IEntityTypeConfiguration<Asignacion>[m
+[31m-{[m
+[31m-    public void Configure(EntityTypeBuilder<Asignacion> builder)[m
+[31m-    {[m
+[31m-        builder.HasIndex(asignacion => asignacion.PersonaId)[m
+[31m-            .IsUnique();[m
+[31m-[m
+[31m-        builder.HasOne(asignacion => asignacion.Persona)[m
+[31m-            .WithOne(persona => persona.Asignacion)[m
+[31m-            .HasForeignKey<Asignacion>([m
+[31m-                asignacion => asignacion.PersonaId)[m
+[31m-            .OnDelete(DeleteBehavior.Restrict);[m
+[31m-[m
+[31m-        builder.HasOne(asignacion => asignacion.Referente)[m
+[31m-            .WithMany(referente => referente.Asignaciones)[m
+[31m-            .HasForeignKey(asignacion => asignacion.ReferenteId)[m
+[31m-            .OnDelete(DeleteBehavior.Restrict);[m
+[31m-[m
+[31m-        builder.Property(asignacion => asignacion.Rol)[m
+[31m-            .HasConversion<string>()[m
+[31m-            .HasMaxLength(20);[m
+[31m-[m
+[31m-        builder.ToTable([m
+[31m-            "asignaciones",[m
+[31m-            tabla => tabla.HasCheckConstraint([m
+[31m-                "CK_asignaciones_datos_movilizador",[m
+[31m-                """[m
+[31m-                ([m
+[31m-                    rol = 'Movilizador'[m
+[31m-                    AND vehiculo IS NOT NULL[m
+[31m-                    AND patente IS NOT NULL[m
+[31m-                )[m
+[31m-                OR[m
+[31m-                ([m
+[31m-                    rol = 'Votante'[m
+[31m-                    AND vehiculo IS NULL[m
+[31m-                    AND patente IS NULL[m
+[31m-                )[m
+[31m-                """));[m
+[31m-    }[m
+[31m-}[m
+\ No newline at end of file[m
+[1mdiff --git a/Data/Configurations/PersonaConfiguration.cs b/Data/Configurations/PersonaConfiguration.cs[m
+[1mindex 24a2b61..7932ff9 100644[m
+[1m--- a/Data/Configurations/PersonaConfiguration.cs[m
+[1m+++ b/Data/Configurations/PersonaConfiguration.cs[m
+[36m@@ -1,10 +1,11 @@[m
+ using Microsoft.EntityFrameworkCore;[m
+ using Microsoft.EntityFrameworkCore.Metadata.Builders;[m
+[31m-using SGE.Models;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Data.Configurations;[m
+ [m
+[31m-public class PersonaConfiguration : IEntityTypeConfiguration<Persona>[m
+[32m+[m[32mpublic class PersonaConfiguration[m
+[32m+[m[32m    : IEntityTypeConfiguration<Persona>[m
+ {[m
+     public void Configure(EntityTypeBuilder<Persona> builder)[m
+     {[m
+[1mdiff --git a/Data/Configurations/ReferenteConfiguration.cs b/Data/Configurations/ReferenteConfiguration.cs[m
+[1mindex 27d5375..b3c49aa 100644[m
+[1m--- a/Data/Configurations/ReferenteConfiguration.cs[m
+[1m+++ b/Data/Configurations/ReferenteConfiguration.cs[m
+[36m@@ -1,10 +1,11 @@[m
+ using Microsoft.EntityFrameworkCore;[m
+ using Microsoft.EntityFrameworkCore.Metadata.Builders;[m
+[31m-using SGE.Models;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Data.Configurations;[m
+ [m
+[31m-public class ReferenteConfiguration : IEntityTypeConfiguration<Referente>[m
+[32m+[m[32mpublic class ReferenteConfiguration[m
+[32m+[m[32m    : IEntityTypeConfiguration<Referente>[m
+ {[m
+     public void Configure(EntityTypeBuilder<Referente> builder)[m
+     {[m
+[36m@@ -13,7 +14,8 @@[m [mpublic class ReferenteConfiguration : IEntityTypeConfiguration<Referente>[m
+ [m
+         builder.HasOne(referente => referente.Persona)[m
+             .WithOne(persona => persona.Referente)[m
+[31m-            .HasForeignKey<Referente>(referente => referente.PersonaId)[m
+[32m+[m[32m            .HasForeignKey<Referente>([m
+[32m+[m[32m                referente => referente.PersonaId)[m
+             .OnDelete(DeleteBehavior.Restrict);[m
+     }[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/Migrations/20260712210212_InitialCreate.Designer.cs b/Migrations/20260712210212_InitialCreate.Designer.cs[m
+[1mdeleted file mode 100644[m
+[1mindex e99828b..0000000[m
+[1m--- a/Migrations/20260712210212_InitialCreate.Designer.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,240 +0,0 @@[m
+[31m-﻿// <auto-generated />[m
+[31m-using System;[m
+[31m-using Microsoft.EntityFrameworkCore;[m
+[31m-using Microsoft.EntityFrameworkCore.Infrastructure;[m
+[31m-using Microsoft.EntityFrameworkCore.Migrations;[m
+[31m-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;[m
+[31m-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;[m
+[31m-using SGE.Data;[m
+[31m-[m
+[31m-#nullable disable[m
+[31m-[m
+[31m-namespace SGE.Migrations[m
+[31m-{[m
+[31m-    [DbContext(typeof(ApplicationDbContext))][m
+[31m-    [Migration("20260712210212_InitialCreate")][m
+[31m-    partial class InitialCreate[m
+[31m-    {[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void BuildTargetModel(ModelBuilder modelBuilder)[m
+[31m-        {[m
+[31m-#pragma warning disable 612, 618[m
+[31m-            modelBuilder[m
+[31m-                .HasAnnotation("ProductVersion", "8.0.11")[m
+[31m-                .HasAnnotation("Relational:MaxIdentifierLength", 63);[m
+[31m-[m
+[31m-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<bool>("Activo")[m
+[31m-                        .HasColumnType("boolean")[m
+[31m-                        .HasColumnName("activo");[m
+[31m-[m
+[31m-                    b.Property<DateTime>("FechaAsignacion")[m
+[31m-                        .HasColumnType("timestamp with time zone")[m
+[31m-                        .HasColumnName("fecha_asignacion");[m
+[31m-[m
+[31m-                    b.Property<string>("Patente")[m
+[31m-                        .HasMaxLength(15)[m
+[31m-                        .HasColumnType("character varying(15)")[m
+[31m-                        .HasColumnName("patente");[m
+[31m-[m
+[31m-                    b.Property<int>("PersonaId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("persona_id");[m
+[31m-[m
+[31m-                    b.Property<int>("ReferenteId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("referente_id");[m
+[31m-[m
+[31m-                    b.Property<string>("Rol")[m
+[31m-                        .IsRequired()[m
+[31m-                        .HasMaxLength(20)[m
+[31m-                        .HasColumnType("character varying(20)")[m
+[31m-                        .HasColumnName("rol");[m
+[31m-[m
+[31m-                    b.Property<string>("Vehiculo")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("vehiculo");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("PersonaId")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.HasIndex("ReferenteId");[m
+[31m-[m
+[31m-                    b.ToTable("asignaciones", null, t =>[m
+[31m-                        {[m
+[31m-                            t.HasCheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");[m
+[31m-                        });[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<string>("ApellidoNombre")[m
+[31m-                        .IsRequired()[m
+[31m-                        .HasMaxLength(150)[m
+[31m-                        .HasColumnType("character varying(150)")[m
+[31m-                        .HasColumnName("apellido_nombre");[m
+[31m-[m
+[31m-                    b.Property<string>("Cambio")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("cambio");[m
+[31m-[m
+[31m-                    b.Property<string>("Circuito")[m
+[31m-                        .HasMaxLength(50)[m
+[31m-                        .HasColumnType("character varying(50)")[m
+[31m-                        .HasColumnName("circuito");[m
+[31m-[m
+[31m-                    b.Property<string>("Departamento")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("departamento");[m
+[31m-[m
+[31m-                    b.Property<long>("Dni")[m
+[31m-                        .HasColumnType("bigint")[m
+[31m-                        .HasColumnName("dni");[m
+[31m-[m
+[31m-                    b.Property<string>("Domicilio")[m
+[31m-                        .HasMaxLength(250)[m
+[31m-                        .HasColumnType("character varying(250)")[m
+[31m-                        .HasColumnName("domicilio");[m
+[31m-[m
+[31m-                    b.Property<string>("Escuela")[m
+[31m-                        .HasMaxLength(200)[m
+[31m-                        .HasColumnType("character varying(200)")[m
+[31m-                        .HasColumnName("escuela");[m
+[31m-[m
+[31m-                    b.Property<string>("Localidad")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("localidad");[m
+[31m-[m
+[31m-                    b.Property<int?>("Mesa")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("mesa");[m
+[31m-[m
+[31m-                    b.Property<string>("Observaciones")[m
+[31m-                        .HasMaxLength(500)[m
+[31m-                        .HasColumnType("character varying(500)")[m
+[31m-                        .HasColumnName("observaciones");[m
+[31m-[m
+[31m-                    b.Property<int?>("Orden")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("orden");[m
+[31m-[m
+[31m-                    b.Property<string>("Sexo")[m
+[31m-                        .HasMaxLength(20)[m
+[31m-                        .HasColumnType("character varying(20)")[m
+[31m-                        .HasColumnName("sexo");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("Dni")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.ToTable("personas");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<bool>("Activo")[m
+[31m-                        .HasColumnType("boolean")[m
+[31m-                        .HasColumnName("activo");[m
+[31m-[m
+[31m-                    b.Property<DateTime>("FechaAlta")[m
+[31m-                        .HasColumnType("timestamp with time zone")[m
+[31m-                        .HasColumnName("fecha_alta");[m
+[31m-[m
+[31m-                    b.Property<string>("Observaciones")[m
+[31m-                        .HasMaxLength(500)[m
+[31m-                        .HasColumnType("character varying(500)")[m
+[31m-                        .HasColumnName("observaciones");[m
+[31m-[m
+[31m-                    b.Property<int>("PersonaId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("persona_id");[m
+[31m-[m
+[31m-                    b.Property<string>("Telefono")[m
+[31m-                        .HasMaxLength(30)[m
+[31m-                        .HasColumnType("character varying(30)")[m
+[31m-                        .HasColumnName("telefono");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("PersonaId")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.ToTable("referentes");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[31m-                {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[31m-                        .WithOne("Asignacion")[m
+[31m-                        .HasForeignKey("SGE.Models.Asignacion", "PersonaId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.HasOne("SGE.Models.Referente", "Referente")[m
+[31m-                        .WithMany("Asignaciones")[m
+[31m-                        .HasForeignKey("ReferenteId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.Navigation("Persona");[m
+[31m-[m
+[31m-                    b.Navigation("Referente");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[31m-                        .WithOne("Referente")[m
+[31m-                        .HasForeignKey("SGE.Models.Referente", "PersonaId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.Navigation("Persona");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[31m-                {[m
+[31m-                    b.Navigation("Asignacion");[m
+[31m-[m
+[31m-                    b.Navigation("Referente");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.Navigation("Asignaciones");[m
+[31m-                });[m
+[31m-#pragma warning restore 612, 618[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/Migrations/20260712210212_InitialCreate.cs b/Migrations/20260712210212_InitialCreate.cs[m
+[1mdeleted file mode 100644[m
+[1mindex 4af0a7d..0000000[m
+[1m--- a/Migrations/20260712210212_InitialCreate.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,131 +0,0 @@[m
+[31m-﻿using System;[m
+[31m-using Microsoft.EntityFrameworkCore.Migrations;[m
+[31m-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;[m
+[31m-[m
+[31m-#nullable disable[m
+[31m-[m
+[31m-namespace SGE.Migrations[m
+[31m-{[m
+[31m-    /// <inheritdoc />[m
+[31m-    public partial class InitialCreate : Migration[m
+[31m-    {[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void Up(MigrationBuilder migrationBuilder)[m
+[31m-        {[m
+[31m-            migrationBuilder.CreateTable([m
+[31m-                name: "personas",[m
+[31m-                columns: table => new[m
+[31m-                {[m
+[31m-                    id = table.Column<int>(type: "integer", nullable: false)[m
+[31m-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),[m
+[31m-                    dni = table.Column<long>(type: "bigint", nullable: false),[m
+[31m-                    apellido_nombre = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),[m
+[31m-                    sexo = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),[m
+[31m-                    domicilio = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),[m
+[31m-                    localidad = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),[m
+[31m-                    departamento = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),[m
+[31m-                    circuito = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),[m
+[31m-                    escuela = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),[m
+[31m-                    mesa = table.Column<int>(type: "integer", nullable: true),[m
+[31m-                    orden = table.Column<int>(type: "integer", nullable: true),[m
+[31m-                    cambio = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),[m
+[31m-                    observaciones = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)[m
+[31m-                },[m
+[31m-                constraints: table =>[m
+[31m-                {[m
+[31m-                    table.PrimaryKey("PK_personas", x => x.id);[m
+[31m-                });[m
+[31m-[m
+[31m-            migrationBuilder.CreateTable([m
+[31m-                name: "referentes",[m
+[31m-                columns: table => new[m
+[31m-                {[m
+[31m-                    id = table.Column<int>(type: "integer", nullable: false)[m
+[31m-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),[m
+[31m-                    persona_id = table.Column<int>(type: "integer", nullable: false),[m
+[31m-                    telefono = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),[m
+[31m-                    observaciones = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),[m
+[31m-                    fecha_alta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),[m
+[31m-                    activo = table.Column<bool>(type: "boolean", nullable: false)[m
+[31m-                },[m
+[31m-                constraints: table =>[m
+[31m-                {[m
+[31m-                    table.PrimaryKey("PK_referentes", x => x.id);[m
+[31m-                    table.ForeignKey([m
+[31m-                        name: "FK_referentes_personas_persona_id",[m
+[31m-                        column: x => x.persona_id,[m
+[31m-                        principalTable: "personas",[m
+[31m-                        principalColumn: "id",[m
+[31m-                        onDelete: ReferentialAction.Restrict);[m
+[31m-                });[m
+[31m-[m
+[31m-            migrationBuilder.CreateTable([m
+[31m-                name: "asignaciones",[m
+[31m-                columns: table => new[m
+[31m-                {[m
+[31m-                    id = table.Column<int>(type: "integer", nullable: false)[m
+[31m-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),[m
+[31m-                    referente_id = table.Column<int>(type: "integer", nullable: false),[m
+[31m-                    persona_id = table.Column<int>(type: "integer", nullable: false),[m
+[31m-                    rol = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),[m
+[31m-                    vehiculo = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),[m
+[31m-                    patente = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: true),[m
+[31m-                    fecha_asignacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),[m
+[31m-                    activo = table.Column<bool>(type: "boolean", nullable: false)[m
+[31m-                },[m
+[31m-                constraints: table =>[m
+[31m-                {[m
+[31m-                    table.PrimaryKey("PK_asignaciones", x => x.id);[m
+[31m-                    table.CheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");[m
+[31m-                    table.ForeignKey([m
+[31m-                        name: "FK_asignaciones_personas_persona_id",[m
+[31m-                        column: x => x.persona_id,[m
+[31m-                        principalTable: "personas",[m
+[31m-                        principalColumn: "id",[m
+[31m-                        onDelete: ReferentialAction.Restrict);[m
+[31m-                    table.ForeignKey([m
+[31m-                        name: "FK_asignaciones_referentes_referente_id",[m
+[31m-                        column: x => x.referente_id,[m
+[31m-                        principalTable: "referentes",[m
+[31m-                        principalColumn: "id",[m
+[31m-                        onDelete: ReferentialAction.Restrict);[m
+[31m-                });[m
+[31m-[m
+[31m-            migrationBuilder.CreateIndex([m
+[31m-                name: "IX_asignaciones_persona_id",[m
+[31m-                table: "asignaciones",[m
+[31m-                column: "persona_id",[m
+[31m-                unique: true);[m
+[31m-[m
+[31m-            migrationBuilder.CreateIndex([m
+[31m-                name: "IX_asignaciones_referente_id",[m
+[31m-                table: "asignaciones",[m
+[31m-                column: "referente_id");[m
+[31m-[m
+[31m-            migrationBuilder.CreateIndex([m
+[31m-                name: "IX_personas_dni",[m
+[31m-                table: "personas",[m
+[31m-                column: "dni",[m
+[31m-                unique: true);[m
+[31m-[m
+[31m-            migrationBuilder.CreateIndex([m
+[31m-                name: "IX_referentes_persona_id",[m
+[31m-                table: "referentes",[m
+[31m-                column: "persona_id",[m
+[31m-                unique: true);[m
+[31m-        }[m
+[31m-[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void Down(MigrationBuilder migrationBuilder)[m
+[31m-        {[m
+[31m-            migrationBuilder.DropTable([m
+[31m-                name: "asignaciones");[m
+[31m-[m
+[31m-            migrationBuilder.DropTable([m
+[31m-                name: "referentes");[m
+[31m-[m
+[31m-            migrationBuilder.DropTable([m
+[31m-                name: "personas");[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/Migrations/20260712220513_AddPadronLocationFields.Designer.cs b/Migrations/20260712220513_AddPadronLocationFields.Designer.cs[m
+[1mdeleted file mode 100644[m
+[1mindex edb5dc0..0000000[m
+[1m--- a/Migrations/20260712220513_AddPadronLocationFields.Designer.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,240 +0,0 @@[m
+[31m-﻿// <auto-generated />[m
+[31m-using System;[m
+[31m-using Microsoft.EntityFrameworkCore;[m
+[31m-using Microsoft.EntityFrameworkCore.Infrastructure;[m
+[31m-using Microsoft.EntityFrameworkCore.Migrations;[m
+[31m-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;[m
+[31m-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;[m
+[31m-using SGE.Data;[m
+[31m-[m
+[31m-#nullable disable[m
+[31m-[m
+[31m-namespace SGE.Migrations[m
+[31m-{[m
+[31m-    [DbContext(typeof(ApplicationDbContext))][m
+[31m-    [Migration("20260712220513_AddPadronLocationFields")][m
+[31m-    partial class AddPadronLocationFields[m
+[31m-    {[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void BuildTargetModel(ModelBuilder modelBuilder)[m
+[31m-        {[m
+[31m-#pragma warning disable 612, 618[m
+[31m-            modelBuilder[m
+[31m-                .HasAnnotation("ProductVersion", "8.0.11")[m
+[31m-                .HasAnnotation("Relational:MaxIdentifierLength", 63);[m
+[31m-[m
+[31m-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<bool>("Activo")[m
+[31m-                        .HasColumnType("boolean")[m
+[31m-                        .HasColumnName("activo");[m
+[31m-[m
+[31m-                    b.Property<DateTime>("FechaAsignacion")[m
+[31m-                        .HasColumnType("timestamp with time zone")[m
+[31m-                        .HasColumnName("fecha_asignacion");[m
+[31m-[m
+[31m-                    b.Property<string>("Patente")[m
+[31m-                        .HasMaxLength(15)[m
+[31m-                        .HasColumnType("character varying(15)")[m
+[31m-                        .HasColumnName("patente");[m
+[31m-[m
+[31m-                    b.Property<int>("PersonaId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("persona_id");[m
+[31m-[m
+[31m-                    b.Property<int>("ReferenteId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("referente_id");[m
+[31m-[m
+[31m-                    b.Property<string>("Rol")[m
+[31m-                        .IsRequired()[m
+[31m-                        .HasMaxLength(20)[m
+[31m-                        .HasColumnType("character varying(20)")[m
+[31m-                        .HasColumnName("rol");[m
+[31m-[m
+[31m-                    b.Property<string>("Vehiculo")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("vehiculo");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("PersonaId")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.HasIndex("ReferenteId");[m
+[31m-[m
+[31m-                    b.ToTable("asignaciones", null, t =>[m
+[31m-                        {[m
+[31m-                            t.HasCheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");[m
+[31m-                        });[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<string>("ApellidoNombre")[m
+[31m-                        .IsRequired()[m
+[31m-                        .HasMaxLength(150)[m
+[31m-                        .HasColumnType("character varying(150)")[m
+[31m-                        .HasColumnName("apellido_nombre");[m
+[31m-[m
+[31m-                    b.Property<string>("Cambio")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("cambio");[m
+[31m-[m
+[31m-                    b.Property<string>("Circuito")[m
+[31m-                        .HasMaxLength(50)[m
+[31m-                        .HasColumnType("character varying(50)")[m
+[31m-                        .HasColumnName("circuito");[m
+[31m-[m
+[31m-                    b.Property<string>("Departamento")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("departamento");[m
+[31m-[m
+[31m-                    b.Property<long>("Dni")[m
+[31m-                        .HasColumnType("bigint")[m
+[31m-                        .HasColumnName("dni");[m
+[31m-[m
+[31m-                    b.Property<string>("Domicilio")[m
+[31m-                        .HasMaxLength(250)[m
+[31m-                        .HasColumnType("character varying(250)")[m
+[31m-                        .HasColumnName("domicilio");[m
+[31m-[m
+[31m-                    b.Property<string>("Escuela")[m
+[31m-                        .HasMaxLength(200)[m
+[31m-                        .HasColumnType("character varying(200)")[m
+[31m-                        .HasColumnName("escuela");[m
+[31m-[m
+[31m-                    b.Property<string>("Localidad")[m
+[31m-                        .HasMaxLength(100)[m
+[31m-                        .HasColumnType("character varying(100)")[m
+[31m-                        .HasColumnName("localidad");[m
+[31m-[m
+[31m-                    b.Property<int?>("Mesa")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("mesa");[m
+[31m-[m
+[31m-                    b.Property<string>("Observaciones")[m
+[31m-                        .HasMaxLength(500)[m
+[31m-                        .HasColumnType("character varying(500)")[m
+[31m-                        .HasColumnName("observaciones");[m
+[31m-[m
+[31m-                    b.Property<int?>("Orden")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("orden");[m
+[31m-[m
+[31m-                    b.Property<string>("Sexo")[m
+[31m-                        .HasMaxLength(20)[m
+[31m-                        .HasColumnType("character varying(20)")[m
+[31m-                        .HasColumnName("sexo");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("Dni")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.ToTable("personas");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.Property<int>("Id")[m
+[31m-                        .ValueGeneratedOnAdd()[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("id");[m
+[31m-[m
+[31m-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[31m-[m
+[31m-                    b.Property<bool>("Activo")[m
+[31m-                        .HasColumnType("boolean")[m
+[31m-                        .HasColumnName("activo");[m
+[31m-[m
+[31m-                    b.Property<DateTime>("FechaAlta")[m
+[31m-                        .HasColumnType("timestamp with time zone")[m
+[31m-                        .HasColumnName("fecha_alta");[m
+[31m-[m
+[31m-                    b.Property<string>("Observaciones")[m
+[31m-                        .HasMaxLength(500)[m
+[31m-                        .HasColumnType("character varying(500)")[m
+[31m-                        .HasColumnName("observaciones");[m
+[31m-[m
+[31m-                    b.Property<int>("PersonaId")[m
+[31m-                        .HasColumnType("integer")[m
+[31m-                        .HasColumnName("persona_id");[m
+[31m-[m
+[31m-                    b.Property<string>("Telefono")[m
+[31m-                        .HasMaxLength(30)[m
+[31m-                        .HasColumnType("character varying(30)")[m
+[31m-                        .HasColumnName("telefono");[m
+[31m-[m
+[31m-                    b.HasKey("Id");[m
+[31m-[m
+[31m-                    b.HasIndex("PersonaId")[m
+[31m-                        .IsUnique();[m
+[31m-[m
+[31m-                    b.ToTable("referentes");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[31m-                {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[31m-                        .WithOne("Asignacion")[m
+[31m-                        .HasForeignKey("SGE.Models.Asignacion", "PersonaId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.HasOne("SGE.Models.Referente", "Referente")[m
+[31m-                        .WithMany("Asignaciones")[m
+[31m-                        .HasForeignKey("ReferenteId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.Navigation("Persona");[m
+[31m-[m
+[31m-                    b.Navigation("Referente");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[31m-                        .WithOne("Referente")[m
+[31m-                        .HasForeignKey("SGE.Models.Referente", "PersonaId")[m
+[31m-                        .OnDelete(DeleteBehavior.Restrict)[m
+[31m-                        .IsRequired();[m
+[31m-[m
+[31m-                    b.Navigation("Persona");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[31m-                {[m
+[31m-                    b.Navigation("Asignacion");[m
+[31m-[m
+[31m-                    b.Navigation("Referente");[m
+[31m-                });[m
+[31m-[m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[31m-                {[m
+[31m-                    b.Navigation("Asignaciones");[m
+[31m-                });[m
+[31m-#pragma warning restore 612, 618[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/Migrations/20260712220513_AddPadronLocationFields.cs b/Migrations/20260712220513_AddPadronLocationFields.cs[m
+[1mdeleted file mode 100644[m
+[1mindex 90784a1..0000000[m
+[1m--- a/Migrations/20260712220513_AddPadronLocationFields.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,22 +0,0 @@[m
+[31m-﻿using Microsoft.EntityFrameworkCore.Migrations;[m
+[31m-[m
+[31m-#nullable disable[m
+[31m-[m
+[31m-namespace SGE.Migrations[m
+[31m-{[m
+[31m-    /// <inheritdoc />[m
+[31m-    public partial class AddPadronLocationFields : Migration[m
+[31m-    {[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void Up(MigrationBuilder migrationBuilder)[m
+[31m-        {[m
+[31m-[m
+[31m-        }[m
+[31m-[m
+[31m-        /// <inheritdoc />[m
+[31m-        protected override void Down(MigrationBuilder migrationBuilder)[m
+[31m-        {[m
+[31m-[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/Migrations/ApplicationDbContextModelSnapshot.cs b/Migrations/ApplicationDbContextModelSnapshot.cs[m
+[1mindex c9377d7..86f2650 100644[m
+[1m--- a/Migrations/ApplicationDbContextModelSnapshot.cs[m
+[1m+++ b/Migrations/ApplicationDbContextModelSnapshot.cs[m
+[36m@@ -22,7 +22,7 @@[m [mnamespace SGE.Migrations[m
+ [m
+             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.AsignacionVotante", b =>[m
+                 {[m
+                     b.Property<int>("Id")[m
+                         .ValueGeneratedOnAdd()[m
+[36m@@ -39,7 +39,43 @@[m [mnamespace SGE.Migrations[m
+                         .HasColumnType("timestamp with time zone")[m
+                         .HasColumnName("fecha_asignacion");[m
+ [m
+[32m+[m[32m                    b.Property<int>("MovilizadorId")[m
+[32m+[m[32m                        .HasColumnType("integer")[m
+[32m+[m[32m                        .HasColumnName("movilizador_id");[m
+[32m+[m
+[32m+[m[32m                    b.Property<int>("PersonaId")[m
+[32m+[m[32m                        .HasColumnType("integer")[m
+[32m+[m[32m                        .HasColumnName("persona_id");[m
+[32m+[m
+[32m+[m[32m                    b.HasKey("Id");[m
+[32m+[m
+[32m+[m[32m                    b.HasIndex("MovilizadorId");[m
+[32m+[m
+[32m+[m[32m                    b.HasIndex("PersonaId")[m
+[32m+[m[32m                        .IsUnique();[m
+[32m+[m
+[32m+[m[32m                    b.ToTable("asignaciones_votantes");[m
+[32m+[m[32m                });[m
+[32m+[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    b.Property<int>("Id")[m
+[32m+[m[32m                        .ValueGeneratedOnAdd()[m
+[32m+[m[32m                        .HasColumnType("integer")[m
+[32m+[m[32m                        .HasColumnName("id");[m
+[32m+[m
+[32m+[m[32m                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));[m
+[32m+[m
+[32m+[m[32m                    b.Property<bool>("Activo")[m
+[32m+[m[32m                        .HasColumnType("boolean")[m
+[32m+[m[32m                        .HasColumnName("activo");[m
+[32m+[m
+[32m+[m[32m                    b.Property<DateTime>("FechaAlta")[m
+[32m+[m[32m                        .HasColumnType("timestamp with time zone")[m
+[32m+[m[32m                        .HasColumnName("fecha_alta");[m
+[32m+[m
+                     b.Property<string>("Patente")[m
+[32m+[m[32m                        .IsRequired()[m
+                         .HasMaxLength(15)[m
+                         .HasColumnType("character varying(15)")[m
+                         .HasColumnName("patente");[m
+[36m@@ -52,13 +88,8 @@[m [mnamespace SGE.Migrations[m
+                         .HasColumnType("integer")[m
+                         .HasColumnName("referente_id");[m
+ [m
+[31m-                    b.Property<string>("Rol")[m
+[31m-                        .IsRequired()[m
+[31m-                        .HasMaxLength(20)[m
+[31m-                        .HasColumnType("character varying(20)")[m
+[31m-                        .HasColumnName("rol");[m
+[31m-[m
+                     b.Property<string>("Vehiculo")[m
+[32m+[m[32m                        .IsRequired()[m
+                         .HasMaxLength(100)[m
+                         .HasColumnType("character varying(100)")[m
+                         .HasColumnName("vehiculo");[m
+[36m@@ -70,13 +101,10 @@[m [mnamespace SGE.Migrations[m
+ [m
+                     b.HasIndex("ReferenteId");[m
+ [m
+[31m-                    b.ToTable("asignaciones", null, t =>[m
+[31m-                        {[m
+[31m-                            t.HasCheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");[m
+[31m-                        });[m
+[32m+[m[32m                    b.ToTable("movilizadores");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Persona", b =>[m
+                 {[m
+                     b.Property<int>("Id")[m
+                         .ValueGeneratedOnAdd()[m
+[36m@@ -115,16 +143,30 @@[m [mnamespace SGE.Migrations[m
+                         .HasColumnType("character varying(250)")[m
+                         .HasColumnName("domicilio");[m
+ [m
+[32m+[m[32m                    b.Property<string>("DomicilioEscuela")[m
+[32m+[m[32m                        .HasMaxLength(250)[m
+[32m+[m[32m                        .HasColumnType("character varying(250)")[m
+[32m+[m[32m                        .HasColumnName("domicilio_escuela");[m
+[32m+[m
+                     b.Property<string>("Escuela")[m
+                         .HasMaxLength(200)[m
+                         .HasColumnType("character varying(200)")[m
+                         .HasColumnName("escuela");[m
+ [m
+[32m+[m[32m                    b.Property<int?>("IdSeccion")[m
+[32m+[m[32m                        .HasColumnType("integer")[m
+[32m+[m[32m                        .HasColumnName("id_seccion");[m
+[32m+[m
+                     b.Property<string>("Localidad")[m
+                         .HasMaxLength(100)[m
+                         .HasColumnType("character varying(100)")[m
+                         .HasColumnName("localidad");[m
+ [m
+[32m+[m[32m                    b.Property<string>("LocalidadEscuela")[m
+[32m+[m[32m                        .HasMaxLength(100)[m
+[32m+[m[32m                        .HasColumnType("character varying(100)")[m
+[32m+[m[32m                        .HasColumnName("localidad_escuela");[m
+[32m+[m
+                     b.Property<int?>("Mesa")[m
+                         .HasColumnType("integer")[m
+                         .HasColumnName("mesa");[m
+[36m@@ -151,7 +193,7 @@[m [mnamespace SGE.Migrations[m
+                     b.ToTable("personas");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>[m
+                 {[m
+                     b.Property<int>("Id")[m
+                         .ValueGeneratedOnAdd()[m
+[36m@@ -190,16 +232,35 @@[m [mnamespace SGE.Migrations[m
+                     b.ToTable("referentes");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Asignacion", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.AsignacionVotante", b =>[m
+                 {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[31m-                        .WithOne("Asignacion")[m
+[31m-                        .HasForeignKey("SGE.Models.Asignacion", "PersonaId")[m
+[32m+[m[32m                    b.HasOne("SGE.Models.Entities.Movilizador", "Movilizador")[m
+[32m+[m[32m                        .WithMany("Votantes")[m
+[32m+[m[32m                        .HasForeignKey("MovilizadorId")[m
+                         .OnDelete(DeleteBehavior.Restrict)[m
+                         .IsRequired();[m
+ [m
+[31m-                    b.HasOne("SGE.Models.Referente", "Referente")[m
+[31m-                        .WithMany("Asignaciones")[m
+[32m+[m[32m                    b.HasOne("SGE.Models.Entities.Persona", "Persona")[m
+[32m+[m[32m                        .WithOne("AsignacionVotante")[m
+[32m+[m[32m                        .HasForeignKey("SGE.Models.Entities.AsignacionVotante", "PersonaId")[m
+[32m+[m[32m                        .OnDelete(DeleteBehavior.Restrict)[m
+[32m+[m[32m                        .IsRequired();[m
+[32m+[m
+[32m+[m[32m                    b.Navigation("Movilizador");[m
+[32m+[m
+[32m+[m[32m                    b.Navigation("Persona");[m
+[32m+[m[32m                });[m
+[32m+[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    b.HasOne("SGE.Models.Entities.Persona", "Persona")[m
+[32m+[m[32m                        .WithOne("Movilizador")[m
+[32m+[m[32m                        .HasForeignKey("SGE.Models.Entities.Movilizador", "PersonaId")[m
+[32m+[m[32m                        .OnDelete(DeleteBehavior.Restrict)[m
+[32m+[m[32m                        .IsRequired();[m
+[32m+[m
+[32m+[m[32m                    b.HasOne("SGE.Models.Entities.Referente", "Referente")[m
+[32m+[m[32m                        .WithMany("Movilizadores")[m
+                         .HasForeignKey("ReferenteId")[m
+                         .OnDelete(DeleteBehavior.Restrict)[m
+                         .IsRequired();[m
+[36m@@ -209,27 +270,34 @@[m [mnamespace SGE.Migrations[m
+                     b.Navigation("Referente");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>[m
+                 {[m
+[31m-                    b.HasOne("SGE.Models.Persona", "Persona")[m
+[32m+[m[32m                    b.HasOne("SGE.Models.Entities.Persona", "Persona")[m
+                         .WithOne("Referente")[m
+[31m-                        .HasForeignKey("SGE.Models.Referente", "PersonaId")[m
+[32m+[m[32m                        .HasForeignKey("SGE.Models.Entities.Referente", "PersonaId")[m
+                         .OnDelete(DeleteBehavior.Restrict)[m
+                         .IsRequired();[m
+ [m
+                     b.Navigation("Persona");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Persona", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>[m
+                 {[m
+[31m-                    b.Navigation("Asignacion");[m
+[32m+[m[32m                    b.Navigation("Votantes");[m
+[32m+[m[32m                });[m
+[32m+[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Persona", b =>[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    b.Navigation("AsignacionVotante");[m
+[32m+[m
+[32m+[m[32m                    b.Navigation("Movilizador");[m
+ [m
+                     b.Navigation("Referente");[m
+                 });[m
+ [m
+[31m-            modelBuilder.Entity("SGE.Models.Referente", b =>[m
+[32m+[m[32m            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>[m
+                 {[m
+[31m-                    b.Navigation("Asignaciones");[m
+[32m+[m[32m                    b.Navigation("Movilizadores");[m
+                 });[m
+ #pragma warning restore 612, 618[m
+         }[m
+[1mdiff --git a/Models/Entities/Asignacion.cs b/Models/Entities/Asignacion.cs[m
+[1mdeleted file mode 100644[m
+[1mindex 5fa304d..0000000[m
+[1m--- a/Models/Entities/Asignacion.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,44 +0,0 @@[m
+[31m-using System.ComponentModel.DataAnnotations;[m
+[31m-using System.ComponentModel.DataAnnotations.Schema;[m
+[31m-[m
+[31m-namespace SGE.Models;[m
+[31m-[m
+[31m-[Table("asignaciones")][m
+[31m-public class Asignacion[m
+[31m-{[m
+[31m-    [Key][m
+[31m-    [Column("id")][m
+[31m-    public int Id { get; set; }[m
+[31m-[m
+[31m-    [Required][m
+[31m-    [Column("referente_id")][m
+[31m-    public int ReferenteId { get; set; }[m
+[31m-[m
+[31m-    [ForeignKey(nameof(ReferenteId))][m
+[31m-    public Referente Referente { get; set; } = null!;[m
+[31m-[m
+[31m-    [Required][m
+[31m-    [Column("persona_id")][m
+[31m-    public int PersonaId { get; set; }[m
+[31m-[m
+[31m-    [ForeignKey(nameof(PersonaId))][m
+[31m-    public Persona Persona { get; set; } = null!;[m
+[31m-[m
+[31m-    [Required][m
+[31m-    [Column("rol")][m
+[31m-    public RolAsignacion Rol { get; set; }[m
+[31m-[m
+[31m-    [MaxLength(100)][m
+[31m-    [Column("vehiculo")][m
+[31m-    public string? Vehiculo { get; set; }[m
+[31m-[m
+[31m-    [MaxLength(15)][m
+[31m-    [Column("patente")][m
+[31m-    public string? Patente { get; set; }[m
+[31m-[m
+[31m-    [Column("fecha_asignacion")][m
+[31m-    public DateTime FechaAsignacion { get; set; } = DateTime.UtcNow;[m
+[31m-[m
+[31m-    [Column("activo")][m
+[31m-    public bool Activo { get; set; } = true;[m
+[31m-}[m
+\ No newline at end of file[m
+[1mdiff --git a/Models/Entities/Persona.cs b/Models/Entities/Persona.cs[m
+[1mindex c59a263..0497e97 100644[m
+[1m--- a/Models/Entities/Persona.cs[m
+[1m+++ b/Models/Entities/Persona.cs[m
+[36m@@ -1,7 +1,7 @@[m
+ using System.ComponentModel.DataAnnotations;[m
+ using System.ComponentModel.DataAnnotations.Schema;[m
+ [m
+[31m-namespace SGE.Models;[m
+[32m+[m[32mnamespace SGE.Models.Entities;[m
+ [m
+ [Table("personas")][m
+ public class Persona[m
+[36m@@ -49,11 +49,25 @@[m [mpublic class Persona[m
+ [m
+     public Referente? Referente { get; set; }[m
+ [m
+[31m-    public Asignacion? Asignacion { get; set; }[m
+[32m+[m[32m    public Movilizador? Movilizador { get; set; }[m
+[32m+[m
+[32m+[m[32m    public AsignacionVotante? AsignacionVotante { get; set; }[m
+[32m+[m
+     [MaxLength(100)][m
+     [Column("cambio")][m
+     public string? Cambio { get; set; }[m
+     [MaxLength(500)][m
+     [Column("observaciones")][m
+     public string? Observaciones { get; set; }[m
+[32m+[m[41m    [m
+[32m+[m[32m    [Column("id_seccion")][m
+[32m+[m[32m    public int? IdSeccion { get; set; }[m
+[32m+[m
+[32m+[m[32m    [MaxLength(250)][m
+[32m+[m[32m    [Column("domicilio_escuela")][m
+[32m+[m[32m    public string? DomicilioEscuela { get; set; }[m
+[32m+[m
+[32m+[m[32m    [MaxLength(100)][m
+[32m+[m[32m    [Column("localidad_escuela")][m
+[32m+[m[32m    public string? LocalidadEscuela { get; set; }[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/Models/Entities/Referente.cs b/Models/Entities/Referente.cs[m
+[1mindex af2fa4b..6f95346 100644[m
+[1m--- a/Models/Entities/Referente.cs[m
+[1m+++ b/Models/Entities/Referente.cs[m
+[36m@@ -1,7 +1,6 @@[m
+ using System.ComponentModel.DataAnnotations;[m
+ using System.ComponentModel.DataAnnotations.Schema;[m
+[31m-[m
+[31m-namespace SGE.Models;[m
+[32m+[m[32mnamespace SGE.Models.Entities;[m
+ [m
+ [Table("referentes")][m
+ public class Referente[m
+[36m@@ -28,9 +27,10 @@[m [mpublic class Referente[m
+     [Column("fecha_alta")][m
+     public DateTime FechaAlta { get; set; } = DateTime.UtcNow;[m
+ [m
+[31m-    [Column("activo")][m
+[32m+[m[32m   [Column("activo")][m
+     public bool Activo { get; set; } = true;[m
+ [m
+[31m-    public ICollection<Asignacion> Asignaciones { get; set; }[m
+[31m-        = new List<Asignacion>();[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m    public ICollection<Movilizador> Movilizadores { get; set; }[m
+[32m+[m[32m        = new List<Movilizador>();[m
+[32m+[m[32m}[m
+[41m+    [m
+\ No newline at end of file[m
+[1mdiff --git a/Models/Enums/RolAsignacion.cs b/Models/Enums/RolAsignacion.cs[m
+[1mdeleted file mode 100644[m
+[1mindex cd04462..0000000[m
+[1m--- a/Models/Enums/RolAsignacion.cs[m
+[1m+++ /dev/null[m
+[36m@@ -1,7 +0,0 @@[m
+[31m-namespace SGE.Models;[m
+[31m-[m
+[31m-public enum RolAsignacion[m
+[31m-{[m
+[31m-    Votante = 1,[m
+[31m-    Movilizador = 2[m
+[31m-}[m
+\ No newline at end of file[m
+[1mdiff --git a/Program.cs b/Program.cs[m
+[1mindex 349971e..f0c8793 100644[m
+[1m--- a/Program.cs[m
+[1m+++ b/Program.cs[m
+[36m@@ -13,10 +13,11 @@[m [mbuilder.Services.AddDbContext<ApplicationDbContext>(options =>[m
+         builder.Configuration.GetConnectionString("DefaultConnection")));[m
+ [m
+ builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();[m
+[32m+[m[32mbuilder.Services.AddScoped<IReferenteRepository, ReferenteRepository>();[m
+ [m
+[31m-builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();[m
+ builder.Services.AddScoped<IPadronImportService, PadronImportService>();[m
+[31m-[m
+[32m+[m[32mbuilder.Services.AddScoped<IReferenteService, ReferenteService>();builder.Services.AddScoped<IMovilizadorRepository, MovilizadorRepository>();[m
+[32m+[m[32mbuilder.Services.AddScoped<IAsignacionVotanteRepository,AsignacionVotanteRepository>();[m
+ var app = builder.Build();[m
+ [m
+ // Configure the HTTP request pipeline.[m
+[1mdiff --git a/Repositories/IPersonaRepository.cs b/Repositories/IPersonaRepository.cs[m
+[1mindex 49ef015..71c1ad4 100644[m
+[1m--- a/Repositories/IPersonaRepository.cs[m
+[1m+++ b/Repositories/IPersonaRepository.cs[m
+[36m@@ -1,55 +1,26 @@[m
+[31m-using Microsoft.EntityFrameworkCore;[m
+[31m-using SGE.Data;[m
+[31m-using SGE.Models;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Repositories;[m
+ [m
+[31m-public class PersonaRepository : IPersonaRepository[m
+[32m+[m[32mpublic interface IPersonaRepository[m
+ {[m
+[31m-    private readonly ApplicationDbContext _context;[m
+[32m+[m[32m    Task<Persona?> ObtenerPorDniAsync([m
+[32m+[m[32m        long dni,[m
+[32m+[m[32m        CancellationToken cancellationToken = default);[m
+ [m
+[31m-    public PersonaRepository(ApplicationDbContext context)[m
+[31m-    {[m
+[31m-        _context = context;[m
+[31m-    }[m
+[31m-[m
+[31m-    public async Task<Dictionary<long, Persona>> ObtenerPorDnisAsync([m
+[32m+[m[32m    Task<Dictionary<long, Persona>> ObtenerPorDnisAsync([m
+         IEnumerable<long> dnis,[m
+[31m-        CancellationToken cancellationToken = default)[m
+[31m-    {[m
+[31m-        long[] dnisUnicos = dnis[m
+[31m-            .Distinct()[m
+[31m-            .ToArray();[m
+[31m-[m
+[31m-        return await _context.Personas[m
+[31m-            .Where(persona => dnisUnicos.Contains(persona.Dni))[m
+[31m-            .ToDictionaryAsync([m
+[31m-                persona => persona.Dni,[m
+[31m-                cancellationToken);[m
+[31m-    }[m
+[32m+[m[32m        CancellationToken cancellationToken = default);[m
+ [m
+[31m-    public async Task AgregarRangoAsync([m
+[32m+[m[32m    Task AgregarRangoAsync([m
+         IEnumerable<Persona> personas,[m
+[31m-        CancellationToken cancellationToken = default)[m
+[31m-    {[m
+[31m-        await _context.Personas.AddRangeAsync([m
+[31m-            personas,[m
+[31m-            cancellationToken);[m
+[31m-    }[m
+[32m+[m[32m        CancellationToken cancellationToken = default);[m
+ [m
+[31m-    public void ActualizarRango(IEnumerable<Persona> personas)[m
+[31m-    {[m
+[31m-        _context.Personas.UpdateRange(personas);[m
+[31m-    }[m
+[32m+[m[32m    void ActualizarRango([m
+[32m+[m[32m        IEnumerable<Persona> personas);[m
+ [m
+[31m-    public async Task<int> GuardarCambiosAsync([m
+[31m-        CancellationToken cancellationToken = default)[m
+[31m-    {[m
+[31m-        return await _context.SaveChangesAsync(cancellationToken);[m
+[31m-    }[m
+[32m+[m[32m    Task<int> GuardarCambiosAsync([m
+[32m+[m[32m        CancellationToken cancellationToken = default);[m
+ [m
+[31m-    public void LimpiarSeguimiento()[m
+[31m-    {[m
+[31m-        _context.ChangeTracker.Clear();[m
+[31m-    }[m
+[32m+[m[32m    void LimpiarSeguimiento();[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/Repositories/PersonaRepository.cs b/Repositories/PersonaRepository.cs[m
+[1mindex 0bf954f..183fd9c 100644[m
+[1m--- a/Repositories/PersonaRepository.cs[m
+[1m+++ b/Repositories/PersonaRepository.cs[m
+[36m@@ -1,21 +1,66 @@[m
+[31m-using SGE.Models;[m
+[32m+[m[32musing Microsoft.EntityFrameworkCore;[m
+[32m+[m[32musing SGE.Data;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Repositories;[m
+ [m
+[31m-public interface IPersonaRepository[m
+[32m+[m[32mpublic class PersonaRepository : IPersonaRepository[m
+ {[m
+[31m-    Task<Dictionary<long, Persona>> ObtenerPorDnisAsync([m
+[32m+[m[32m    private readonly ApplicationDbContext _context;[m
+[32m+[m
+[32m+[m[32m    public PersonaRepository(ApplicationDbContext context)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        _context = context;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public async Task<Persona?> ObtenerPorDniAsync([m
+[32m+[m[32m        long dni,[m
+[32m+[m[32m        CancellationToken cancellationToken = default)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return await _context.Personas[m
+[32m+[m[32m            .FirstOrDefaultAsync([m
+[32m+[m[32m                persona => persona.Dni == dni,[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public async Task<Dictionary<long, Persona>> ObtenerPorDnisAsync([m
+         IEnumerable<long> dnis,[m
+[31m-        CancellationToken cancellationToken = default);[m
+[32m+[m[32m        CancellationToken cancellationToken = default)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        long[] dnisUnicos = dnis[m
+[32m+[m[32m            .Distinct()[m
+[32m+[m[32m            .ToArray();[m
+[32m+[m
+[32m+[m[32m        return await _context.Personas[m
+[32m+[m[32m            .Where(persona => dnisUnicos.Contains(persona.Dni))[m
+[32m+[m[32m            .ToDictionaryAsync([m
+[32m+[m[32m                persona => persona.Dni,[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m[32m    }[m
+ [m
+[31m-    Task AgregarRangoAsync([m
+[32m+[m[32m    public async Task AgregarRangoAsync([m
+         IEnumerable<Persona> personas,[m
+[31m-        CancellationToken cancellationToken = default);[m
+[32m+[m[32m        CancellationToken cancellationToken = default)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        await _context.Personas.AddRangeAsync([m
+[32m+[m[32m            personas,[m
+[32m+[m[32m            cancellationToken);[m
+[32m+[m[32m    }[m
+ [m
+[31m-    void ActualizarRango(IEnumerable<Persona> personas);[m
+[32m+[m[32m    public void ActualizarRango([m
+[32m+[m[32m        IEnumerable<Persona> personas)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        _context.Personas.UpdateRange(personas);[m
+[32m+[m[32m    }[m
+ [m
+[31m-    Task<int> GuardarCambiosAsync([m
+[31m-        CancellationToken cancellationToken = default);[m
+[32m+[m[32m    public async Task<int> GuardarCambiosAsync([m
+[32m+[m[32m        CancellationToken cancellationToken = default)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return await _context.SaveChangesAsync(cancellationToken);[m
+[32m+[m[32m    }[m
+ [m
+[31m-    void LimpiarSeguimiento();[m
+[32m+[m[32m    public void LimpiarSeguimiento()[m
+[32m+[m[32m    {[m
+[32m+[m[32m        _context.ChangeTracker.Clear();[m
+[32m+[m[32m    }[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/Services/PadronImportService.cs b/Services/PadronImportService.cs[m
+[1mindex e551e7f..8f43e6b 100644[m
+[1m--- a/Services/PadronImportService.cs[m
+[1m+++ b/Services/PadronImportService.cs[m
+[36m@@ -3,11 +3,13 @@[m [musing SGE.DTOs.Importacion;[m
+ using SGE.Helpers;[m
+ using SGE.Repositories;[m
+ using SGE.Services.Interfaces;[m
+[32m+[m[32musing SGE.Models.Entities;[m
+ [m
+ namespace SGE.Services;[m
+ [m
+ public class PadronImportService : IPadronImportService[m
+ {[m
+[32m+[m[32m    private const int TamanoLote = 2000;[m
+     private readonly IPersonaRepository _personaRepository;[m
+ [m
+     public PadronImportService(IPersonaRepository personaRepository)[m
+[36m@@ -15,10 +17,10 @@[m [mpublic class PadronImportService : IPadronImportService[m
+         _personaRepository = personaRepository;[m
+     }[m
+ [m
+[31m-    public Task<ResultadoImportacionDto> ImportarAsync([m
+[31m-        Stream archivo,[m
+[31m-        string nombreArchivo,[m
+[31m-        CancellationToken cancellationToken = default)[m
+[32m+[m[32m    public async Task<ResultadoImportacionDto> ImportarAsync([m
+[32m+[m[32m    Stream archivo,[m
+[32m+[m[32m    string nombreArchivo,[m
+[32m+[m[32m    CancellationToken cancellationToken = default)[m
+     {[m
+         ValidarArchivo(archivo, nombreArchivo);[m
+ [m
+[36m@@ -49,9 +51,21 @@[m [mpublic class PadronImportService : IPadronImportService[m
+             resultado,[m
+             cancellationToken);[m
+ [m
+[32m+[m[32m        if (resultado.Errores.Count > 0)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            resultado.FechaFin = DateTime.UtcNow;[m
+[32m+[m[32m            return resultado;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        await ProcesarFilasAsync([m
+[32m+[m[32m            hoja,[m
+[32m+[m[32m            columnas,[m
+[32m+[m[32m            resultado,[m
+[32m+[m[32m            cancellationToken);[m
+[32m+[m
+         resultado.FechaFin = DateTime.UtcNow;[m
+ [m
+[31m-        return Task.FromResult(resultado);[m
+[32m+[m[32m        return resultado;[m
+     }[m
+ [m
+     private static void ValidarArchivo([m
+[36m@@ -213,6 +227,204 @@[m [mpublic class PadronImportService : IPadronImportService[m
+         }[m
+     }[m
+ [m
+[32m+[m[32m    private async Task ProcesarFilasAsync([m
+[32m+[m[32m    IXLWorksheet hoja,[m
+[32m+[m[32m    IReadOnlyDictionary<string, int> columnas,[m
+[32m+[m[32m    ResultadoImportacionDto resultado,[m
+[32m+[m[32m    CancellationToken cancellationToken)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        IXLRow filaEncabezados = hoja.FirstRowUsed()[m
+[32m+[m[32m            ?? throw new InvalidOperationException([m
+[32m+[m[32m                "La hoja de cálculo está vacía.");[m
+[32m+[m
+[32m+[m[32m        IXLRow ultimaFila = hoja.LastRowUsed()[m
+[32m+[m[32m            ?? throw new InvalidOperationException([m
+[32m+[m[32m                "El archivo no contiene filas de datos.");[m
+[32m+[m
+[32m+[m[32m        int primeraFilaDatos =[m
+[32m+[m[32m            filaEncabezados.RowNumber() + 1;[m
+[32m+[m
+[32m+[m[32m        int numeroUltimaFila =[m
+[32m+[m[32m            ultimaFila.RowNumber();[m
+[32m+[m
+[32m+[m[32m        var lote = new List<PersonaImportDto>(TamanoLote);[m
+[32m+[m
+[32m+[m[32m        for (int numeroFila = primeraFilaDatos;[m
+[32m+[m[32m            numeroFila <= numeroUltimaFila;[m
+[32m+[m[32m            numeroFila++)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            cancellationToken.ThrowIfCancellationRequested();[m
+[32m+[m
+[32m+[m[32m            IXLRow fila = hoja.Row(numeroFila);[m
+[32m+[m
+[32m+[m[32m            if (fila.IsEmpty())[m
+[32m+[m[32m            {[m
+[32m+[m[32m                continue;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            PersonaImportDto? persona = LeerPersona([m
+[32m+[m[32m                fila,[m
+[32m+[m[32m                columnas,[m
+[32m+[m[32m                resultado.Errores);[m
+[32m+[m
+[32m+[m[32m            if (persona is null)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                continue;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            lote.Add(persona);[m
+[32m+[m
+[32m+[m[32m            if (lote.Count < TamanoLote)[m
+[32m+[m[32m            {[m
+[32m+[m[32m                continue;[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            await ProcesarLoteAsync([m
+[32m+[m[32m                lote,[m
+[32m+[m[32m                resultado,[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m
+[32m+[m[32m            lote.Clear();[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        if (lote.Count > 0)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            await ProcesarLoteAsync([m
+[32m+[m[32m                lote,[m
+[32m+[m[32m                resultado,[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    private async Task ProcesarLoteAsync([m
+[32m+[m[32m    IReadOnlyCollection<PersonaImportDto> lote,[m
+[32m+[m[32m    ResultadoImportacionDto resultado,[m
+[32m+[m[32m    CancellationToken cancellationToken)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        if (lote.Count == 0)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        Dictionary<long, Persona> personasExistentes =[m
+[32m+[m[32m            await _personaRepository.ObtenerPorDnisAsync([m
+[32m+[m[32m                lote.Select(persona => persona.Dni),[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m
+[32m+[m[32m        var personasNuevas = new List<Persona>();[m
+[32m+[m[32m        var personasActualizadas = new List<Persona>();[m
+[32m+[m
+[32m+[m[32m        foreach (PersonaImportDto personaDto in lote)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            if (personasExistentes.TryGetValue([m
+[32m+[m[32m            personaDto.Dni,[m
+[32m+[m[32m            out Persona? personaExistente))[m
+[32m+[m[32m            {[m
+[32m+[m[32m                if (PersonaCambio(personaExistente, personaDto))[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    ActualizarPersona([m
+[32m+[m[32m                        personaExistente,[m
+[32m+[m[32m                        personaDto);[m
+[32m+[m
+[32m+[m[32m                    personasActualizadas.Add(personaExistente);[m
+[32m+[m[32m                    resultado.PersonasActualizadas++;[m
+[32m+[m[32m                }[m
+[32m+[m[32m                else[m
+[32m+[m[32m                {[m
+[32m+[m[32m                    resultado.PersonasSinCambios++;[m
+[32m+[m[32m                }[m
+[32m+[m[32m            }[m
+[32m+[m[32m            else[m
+[32m+[m[32m            {[m
+[32m+[m[32m                personasNuevas.Add([m
+[32m+[m[32m                    CrearPersona(personaDto));[m
+[32m+[m
+[32m+[m[32m                resultado.PersonasCreadas++;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        if (personasNuevas.Count > 0)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            await _personaRepository.AgregarRangoAsync([m
+[32m+[m[32m                personasNuevas,[m
+[32m+[m[32m                cancellationToken);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        if (personasActualizadas.Count > 0)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            _personaRepository.ActualizarRango([m
+[32m+[m[32m                personasActualizadas);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        await _personaRepository.GuardarCambiosAsync([m
+[32m+[m[32m            cancellationToken);[m
+[32m+[m
+[32m+[m[32m        _personaRepository.LimpiarSeguimiento();[m
+[32m+[m[32m    }[m
+[32m+[m[32m    private static Persona CrearPersona([m
+[32m+[m[32m    PersonaImportDto dto)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return new Persona[m
+[32m+[m[32m        {[m
+[32m+[m[32m            Dni = dto.Dni,[m
+[32m+[m[32m            ApellidoNombre = dto.ApellidoNombre,[m
+[32m+[m[32m            Sexo = dto.Sexo,[m
+[32m+[m[32m            Domicilio = dto.Domicilio,[m
+[32m+[m[32m            Circuito = dto.Circuito,[m
+[32m+[m[32m            Localidad = dto.Localidad,[m
+[32m+[m[32m            Departamento = dto.Departamento,[m
+[32m+[m[32m            IdSeccion = dto.IdSeccion,[m
+[32m+[m[32m            Escuela = dto.Escuela,[m
+[32m+[m[32m            Mesa = dto.Mesa,[m
+[32m+[m[32m            DomicilioEscuela = dto.DomicilioEscuela,[m
+[32m+[m[32m            LocalidadEscuela = dto.LocalidadEscuela,[m
+[32m+[m[32m            Orden = dto.Orden,[m
+[32m+[m[32m            Cambio = dto.Cambio,[m
+[32m+[m[32m            Observaciones = dto.Observaciones[m
+[32m+[m[32m        };[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    private static void ActualizarPersona([m
+[32m+[m[32m        Persona persona,[m
+[32m+[m[32m        PersonaImportDto dto)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        persona.ApellidoNombre = dto.ApellidoNombre;[m
+[32m+[m[32m        persona.Sexo = dto.Sexo;[m
+[32m+[m[32m        persona.Domicilio = dto.Domicilio;[m
+[32m+[m[32m        persona.Circuito = dto.Circuito;[m
+[32m+[m[32m        persona.Localidad = dto.Localidad;[m
+[32m+[m[32m        persona.Departamento = dto.Departamento;[m
+[32m+[m[32m        persona.IdSeccion = dto.IdSeccion;[m
+[32m+[m[32m        persona.Escuela = dto.Escuela;[m
+[32m+[m[32m        persona.Mesa = dto.Mesa;[m
+[32m+[m[32m        persona.DomicilioEscuela = dto.DomicilioEscuela;[m
+[32m+[m[32m        persona.LocalidadEscuela = dto.LocalidadEscuela;[m
+[32m+[m[32m        persona.Orden = dto.Orden;[m
+[32m+[m[32m        persona.Cambio = dto.Cambio;[m
+[32m+[m[32m        persona.Observaciones = dto.Observaciones;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    private static bool PersonaCambio([m
+[32m+[m[32m    Persona persona,[m
+[32m+[m[32m    PersonaImportDto dto)[m
+[32m+[m[32m    {[m
+[32m+[m[32m        return[m
+[32m+[m[32m            persona.ApellidoNombre != dto.ApellidoNombre ||[m
+[32m+[m[32m            persona.Sexo != dto.Sexo ||[m
+[32m+[m[32m            persona.Domicilio != dto.Domicilio ||[m
+[32m+[m[32m            persona.Circuito != dto.Circuito ||[m
+[32m+[m[32m            persona.Localidad != dto.Localidad ||[m
+[32m+[m[32m            persona.Departamento != dto.Departamento ||[m
+[32m+[m[32m            persona.IdSeccion != dto.IdSeccion ||[m
+[32m+[m[32m            persona.Escuela != dto.Escuela ||[m
+[32m+[m[32m            persona.Mesa != dto.Mesa ||[m
+[32m+[m[32m            persona.DomicilioEscuela != dto.DomicilioEscuela ||[m
+[32m+[m[32m            persona.LocalidadEscuela != dto.LocalidadEscuela ||[m
+[32m+[m[32m            persona.Orden != dto.Orden ||[m
+[32m+[m[32m            persona.Cambio != dto.Cambio ||[m
+[32m+[m[32m            persona.Observaciones != dto.Observaciones;[m
+[32m+[m[32m    }[m
+[32m+[m
+     private static PersonaImportDto? LeerPersona([m
+         IXLRow fila,[m
+         IReadOnlyDictionary<string, int> columnas,[m

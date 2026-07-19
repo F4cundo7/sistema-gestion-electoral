@@ -13,10 +13,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();
+builder.Services.AddScoped<IReferenteRepository, ReferenteRepository>();
 
-builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();
 builder.Services.AddScoped<IPadronImportService, PadronImportService>();
-
+builder.Services.AddScoped<IReferenteService, ReferenteService>();builder.Services.AddScoped<IMovilizadorRepository, MovilizadorRepository>();
+builder.Services.AddScoped<IAsignacionVotanteRepository,AsignacionVotanteRepository>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

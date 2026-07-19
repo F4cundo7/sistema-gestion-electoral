@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SGE.Models;
+using SGE.Models.Entities;
 
 namespace SGE.Data;
 
@@ -13,7 +13,9 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Persona> Personas => Set<Persona>();
     public DbSet<Referente> Referentes => Set<Referente>();
-    public DbSet<Asignacion> Asignaciones => Set<Asignacion>();
+    public DbSet<Movilizador> Movilizadores => Set<Movilizador>();
+    public DbSet<AsignacionVotante> AsignacionesVotantes
+        => Set<AsignacionVotante>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

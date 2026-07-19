@@ -12,7 +12,7 @@ using SGE.Data;
 namespace SGE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260712210212_InitialCreate")]
+    [Migration("20260716234309_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace SGE.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("SGE.Models.Asignacion", b =>
+            modelBuilder.Entity("SGE.Models.Entities.AsignacionVotante", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -42,7 +42,43 @@ namespace SGE.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("fecha_asignacion");
 
+                    b.Property<int>("MovilizadorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("movilizador_id");
+
+                    b.Property<int>("PersonaId")
+                        .HasColumnType("integer")
+                        .HasColumnName("persona_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MovilizadorId");
+
+                    b.HasIndex("PersonaId")
+                        .IsUnique();
+
+                    b.ToTable("asignaciones_votantes");
+                });
+
+            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("activo");
+
+                    b.Property<DateTime>("FechaAlta")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fecha_alta");
+
                     b.Property<string>("Patente")
+                        .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("character varying(15)")
                         .HasColumnName("patente");
@@ -55,13 +91,8 @@ namespace SGE.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("referente_id");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("rol");
-
                     b.Property<string>("Vehiculo")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("vehiculo");
@@ -73,13 +104,10 @@ namespace SGE.Migrations
 
                     b.HasIndex("ReferenteId");
 
-                    b.ToTable("asignaciones", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");
-                        });
+                    b.ToTable("movilizadores");
                 });
 
-            modelBuilder.Entity("SGE.Models.Persona", b =>
+            modelBuilder.Entity("SGE.Models.Entities.Persona", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -118,15 +146,29 @@ namespace SGE.Migrations
                         .HasColumnType("character varying(250)")
                         .HasColumnName("domicilio");
 
+                    b.Property<string>("DomicilioEscuela")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("domicilio_escuela");
+
                     b.Property<string>("Escuela")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("escuela");
 
+                    b.Property<int?>("IdSeccion")
+                        .HasColumnType("integer")
+                        .HasColumnName("id_seccion");
+
                     b.Property<string>("Localidad")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("localidad");
+
+                    b.Property<string>("LocalidadEscuela")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("localidad_escuela");
 
                     b.Property<int?>("Mesa")
                         .HasColumnType("integer")
@@ -154,7 +196,7 @@ namespace SGE.Migrations
                     b.ToTable("personas");
                 });
 
-            modelBuilder.Entity("SGE.Models.Referente", b =>
+            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -193,16 +235,35 @@ namespace SGE.Migrations
                     b.ToTable("referentes");
                 });
 
-            modelBuilder.Entity("SGE.Models.Asignacion", b =>
+            modelBuilder.Entity("SGE.Models.Entities.AsignacionVotante", b =>
                 {
-                    b.HasOne("SGE.Models.Persona", "Persona")
-                        .WithOne("Asignacion")
-                        .HasForeignKey("SGE.Models.Asignacion", "PersonaId")
+                    b.HasOne("SGE.Models.Entities.Movilizador", "Movilizador")
+                        .WithMany("Votantes")
+                        .HasForeignKey("MovilizadorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SGE.Models.Referente", "Referente")
-                        .WithMany("Asignaciones")
+                    b.HasOne("SGE.Models.Entities.Persona", "Persona")
+                        .WithOne("AsignacionVotante")
+                        .HasForeignKey("SGE.Models.Entities.AsignacionVotante", "PersonaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Movilizador");
+
+                    b.Navigation("Persona");
+                });
+
+            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>
+                {
+                    b.HasOne("SGE.Models.Entities.Persona", "Persona")
+                        .WithOne("Movilizador")
+                        .HasForeignKey("SGE.Models.Entities.Movilizador", "PersonaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SGE.Models.Entities.Referente", "Referente")
+                        .WithMany("Movilizadores")
                         .HasForeignKey("ReferenteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -212,27 +273,34 @@ namespace SGE.Migrations
                     b.Navigation("Referente");
                 });
 
-            modelBuilder.Entity("SGE.Models.Referente", b =>
+            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>
                 {
-                    b.HasOne("SGE.Models.Persona", "Persona")
+                    b.HasOne("SGE.Models.Entities.Persona", "Persona")
                         .WithOne("Referente")
-                        .HasForeignKey("SGE.Models.Referente", "PersonaId")
+                        .HasForeignKey("SGE.Models.Entities.Referente", "PersonaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Persona");
                 });
 
-            modelBuilder.Entity("SGE.Models.Persona", b =>
+            modelBuilder.Entity("SGE.Models.Entities.Movilizador", b =>
                 {
-                    b.Navigation("Asignacion");
+                    b.Navigation("Votantes");
+                });
+
+            modelBuilder.Entity("SGE.Models.Entities.Persona", b =>
+                {
+                    b.Navigation("AsignacionVotante");
+
+                    b.Navigation("Movilizador");
 
                     b.Navigation("Referente");
                 });
 
-            modelBuilder.Entity("SGE.Models.Referente", b =>
+            modelBuilder.Entity("SGE.Models.Entities.Referente", b =>
                 {
-                    b.Navigation("Asignaciones");
+                    b.Navigation("Movilizadores");
                 });
 #pragma warning restore 612, 618
         }

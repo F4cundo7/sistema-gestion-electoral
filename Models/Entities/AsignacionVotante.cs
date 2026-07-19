@@ -1,21 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SGE.Models;
+namespace SGE.Models.Entities;
 
-[Table("asignaciones")]
-public class Asignacion
+[Table("asignaciones_votantes")]
+public class AsignacionVotante
 {
     [Key]
     [Column("id")]
     public int Id { get; set; }
-
-    [Required]
-    [Column("referente_id")]
-    public int ReferenteId { get; set; }
-
-    [ForeignKey(nameof(ReferenteId))]
-    public Referente Referente { get; set; } = null!;
 
     [Required]
     [Column("persona_id")]
@@ -25,16 +18,11 @@ public class Asignacion
     public Persona Persona { get; set; } = null!;
 
     [Required]
-    [Column("rol")]
-    public RolAsignacion Rol { get; set; }
+    [Column("movilizador_id")]
+    public int MovilizadorId { get; set; }
 
-    [MaxLength(100)]
-    [Column("vehiculo")]
-    public string? Vehiculo { get; set; }
-
-    [MaxLength(15)]
-    [Column("patente")]
-    public string? Patente { get; set; }
+    [ForeignKey(nameof(MovilizadorId))]
+    public Movilizador Movilizador { get; set; } = null!;
 
     [Column("fecha_asignacion")]
     public DateTime FechaAsignacion { get; set; } = DateTime.UtcNow;

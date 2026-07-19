@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-namespace SGE.Models;
+namespace SGE.Models.Entities;
 
 [Table("referentes")]
 public class Referente
@@ -28,9 +27,10 @@ public class Referente
     [Column("fecha_alta")]
     public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
 
-    [Column("activo")]
+   [Column("activo")]
     public bool Activo { get; set; } = true;
 
-    public ICollection<Asignacion> Asignaciones { get; set; }
-        = new List<Asignacion>();
+    public ICollection<Movilizador> Movilizadores { get; set; }
+        = new List<Movilizador>();
 }
+    

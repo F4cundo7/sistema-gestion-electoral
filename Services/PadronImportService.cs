@@ -3,11 +3,13 @@ using SGE.DTOs.Importacion;
 using SGE.Helpers;
 using SGE.Repositories;
 using SGE.Services.Interfaces;
+using SGE.Models.Entities;
 
 namespace SGE.Services;
 
 public class PadronImportService : IPadronImportService
 {
+    private const int TamanoLote = 2000;
     private readonly IPersonaRepository _personaRepository;
 
     public PadronImportService(IPersonaRepository personaRepository)
@@ -15,10 +17,10 @@ public class PadronImportService : IPadronImportService
         _personaRepository = personaRepository;
     }
 
-    public Task<ResultadoImportacionDto> ImportarAsync(
-        Stream archivo,
-        string nombreArchivo,
-        CancellationToken cancellationToken = default)
+    public async Task<ResultadoImportacionDto> ImportarAsync(
+    Stream archivo,
+    string nombreArchivo,
+    CancellationToken cancellationToken = default)
     {
         ValidarArchivo(archivo, nombreArchivo);
 
@@ -49,9 +51,21 @@ public class PadronImportService : IPadronImportService
             resultado,
             cancellationToken);
 
+        if (resultado.Errores.Count > 0)
+        {
+            resultado.FechaFin = DateTime.UtcNow;
+            return resultado;
+        }
+
+        await ProcesarFilasAsync(
+            hoja,
+            columnas,
+            resultado,
+            cancellationToken);
+
         resultado.FechaFin = DateTime.UtcNow;
 
-        return Task.FromResult(resultado);
+        return resultado;
     }
 
     private static void ValidarArchivo(
@@ -211,6 +225,204 @@ public class PadronImportService : IPadronImportService
 
             resultado.FilasOmitidas++;
         }
+    }
+
+    private async Task ProcesarFilasAsync(
+    IXLWorksheet hoja,
+    IReadOnlyDictionary<string, int> columnas,
+    ResultadoImportacionDto resultado,
+    CancellationToken cancellationToken)
+    {
+        IXLRow filaEncabezados = hoja.FirstRowUsed()
+            ?? throw new InvalidOperationException(
+                "La hoja de cálculo está vacía.");
+
+        IXLRow ultimaFila = hoja.LastRowUsed()
+            ?? throw new InvalidOperationException(
+                "El archivo no contiene filas de datos.");
+
+        int primeraFilaDatos =
+            filaEncabezados.RowNumber() + 1;
+
+        int numeroUltimaFila =
+            ultimaFila.RowNumber();
+
+        var lote = new List<PersonaImportDto>(TamanoLote);
+
+        for (int numeroFila = primeraFilaDatos;
+            numeroFila <= numeroUltimaFila;
+            numeroFila++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            IXLRow fila = hoja.Row(numeroFila);
+
+            if (fila.IsEmpty())
+            {
+                continue;
+            }
+
+            PersonaImportDto? persona = LeerPersona(
+                fila,
+                columnas,
+                resultado.Errores);
+
+            if (persona is null)
+            {
+                continue;
+            }
+
+            lote.Add(persona);
+
+            if (lote.Count < TamanoLote)
+            {
+                continue;
+            }
+
+            await ProcesarLoteAsync(
+                lote,
+                resultado,
+                cancellationToken);
+
+            lote.Clear();
+        }
+
+        if (lote.Count > 0)
+        {
+            await ProcesarLoteAsync(
+                lote,
+                resultado,
+                cancellationToken);
+        }
+    }
+
+    private async Task ProcesarLoteAsync(
+    IReadOnlyCollection<PersonaImportDto> lote,
+    ResultadoImportacionDto resultado,
+    CancellationToken cancellationToken)
+    {
+        if (lote.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<long, Persona> personasExistentes =
+            await _personaRepository.ObtenerPorDnisAsync(
+                lote.Select(persona => persona.Dni),
+                cancellationToken);
+
+        var personasNuevas = new List<Persona>();
+        var personasActualizadas = new List<Persona>();
+
+        foreach (PersonaImportDto personaDto in lote)
+        {
+            if (personasExistentes.TryGetValue(
+            personaDto.Dni,
+            out Persona? personaExistente))
+            {
+                if (PersonaCambio(personaExistente, personaDto))
+                {
+                    ActualizarPersona(
+                        personaExistente,
+                        personaDto);
+
+                    personasActualizadas.Add(personaExistente);
+                    resultado.PersonasActualizadas++;
+                }
+                else
+                {
+                    resultado.PersonasSinCambios++;
+                }
+            }
+            else
+            {
+                personasNuevas.Add(
+                    CrearPersona(personaDto));
+
+                resultado.PersonasCreadas++;
+            }
+        }
+
+        if (personasNuevas.Count > 0)
+        {
+            await _personaRepository.AgregarRangoAsync(
+                personasNuevas,
+                cancellationToken);
+        }
+
+        if (personasActualizadas.Count > 0)
+        {
+            _personaRepository.ActualizarRango(
+                personasActualizadas);
+        }
+
+        await _personaRepository.GuardarCambiosAsync(
+            cancellationToken);
+
+        _personaRepository.LimpiarSeguimiento();
+    }
+    private static Persona CrearPersona(
+    PersonaImportDto dto)
+    {
+        return new Persona
+        {
+            Dni = dto.Dni,
+            ApellidoNombre = dto.ApellidoNombre,
+            Sexo = dto.Sexo,
+            Domicilio = dto.Domicilio,
+            Circuito = dto.Circuito,
+            Localidad = dto.Localidad,
+            Departamento = dto.Departamento,
+            IdSeccion = dto.IdSeccion,
+            Escuela = dto.Escuela,
+            Mesa = dto.Mesa,
+            DomicilioEscuela = dto.DomicilioEscuela,
+            LocalidadEscuela = dto.LocalidadEscuela,
+            Orden = dto.Orden,
+            Cambio = dto.Cambio,
+            Observaciones = dto.Observaciones
+        };
+    }
+
+    private static void ActualizarPersona(
+        Persona persona,
+        PersonaImportDto dto)
+    {
+        persona.ApellidoNombre = dto.ApellidoNombre;
+        persona.Sexo = dto.Sexo;
+        persona.Domicilio = dto.Domicilio;
+        persona.Circuito = dto.Circuito;
+        persona.Localidad = dto.Localidad;
+        persona.Departamento = dto.Departamento;
+        persona.IdSeccion = dto.IdSeccion;
+        persona.Escuela = dto.Escuela;
+        persona.Mesa = dto.Mesa;
+        persona.DomicilioEscuela = dto.DomicilioEscuela;
+        persona.LocalidadEscuela = dto.LocalidadEscuela;
+        persona.Orden = dto.Orden;
+        persona.Cambio = dto.Cambio;
+        persona.Observaciones = dto.Observaciones;
+    }
+
+    private static bool PersonaCambio(
+    Persona persona,
+    PersonaImportDto dto)
+    {
+        return
+            persona.ApellidoNombre != dto.ApellidoNombre ||
+            persona.Sexo != dto.Sexo ||
+            persona.Domicilio != dto.Domicilio ||
+            persona.Circuito != dto.Circuito ||
+            persona.Localidad != dto.Localidad ||
+            persona.Departamento != dto.Departamento ||
+            persona.IdSeccion != dto.IdSeccion ||
+            persona.Escuela != dto.Escuela ||
+            persona.Mesa != dto.Mesa ||
+            persona.DomicilioEscuela != dto.DomicilioEscuela ||
+            persona.LocalidadEscuela != dto.LocalidadEscuela ||
+            persona.Orden != dto.Orden ||
+            persona.Cambio != dto.Cambio ||
+            persona.Observaciones != dto.Observaciones;
     }
 
     private static PersonaImportDto? LeerPersona(

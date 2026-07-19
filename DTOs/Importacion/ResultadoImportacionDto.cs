@@ -7,9 +7,8 @@ public class ResultadoImportacionDto
     public int FilasLeidas { get; set; }
 
     public int PersonasCreadas { get; set; }
-
     public int PersonasActualizadas { get; set; }
-
+    public int PersonasSinCambios { get; set; }
     public int FilasOmitidas { get; set; }
 
     public DateTime FechaInicio { get; set; }
@@ -17,6 +16,11 @@ public class ResultadoImportacionDto
     public DateTime FechaFin { get; set; }
 
     public List<ErrorImportacionDto> Errores { get; set; } = [];
+    public int TotalProcesadas =>
+        PersonasCreadas +
+        PersonasActualizadas +
+        PersonasSinCambios;
+
 
     public TimeSpan Duracion => FechaFin - FechaInicio;
 

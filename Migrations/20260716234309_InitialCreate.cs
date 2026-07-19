@@ -29,7 +29,10 @@ namespace SGE.Migrations
                     mesa = table.Column<int>(type: "integer", nullable: true),
                     orden = table.Column<int>(type: "integer", nullable: true),
                     cambio = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    observaciones = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    observaciones = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    id_seccion = table.Column<int>(type: "integer", nullable: true),
+                    domicilio_escuela = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    localidad_escuela = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -60,46 +63,83 @@ namespace SGE.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "asignaciones",
+                name: "movilizadores",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    referente_id = table.Column<int>(type: "integer", nullable: false),
                     persona_id = table.Column<int>(type: "integer", nullable: false),
-                    rol = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    vehiculo = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    patente = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: true),
-                    fecha_asignacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    referente_id = table.Column<int>(type: "integer", nullable: false),
+                    vehiculo = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    patente = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: false),
+                    fecha_alta = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     activo = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_asignaciones", x => x.id);
-                    table.CheckConstraint("CK_asignaciones_datos_movilizador", "(\r\n    rol = 'Movilizador'\r\n    AND vehiculo IS NOT NULL\r\n    AND patente IS NOT NULL\r\n)\r\nOR\r\n(\r\n    rol = 'Votante'\r\n    AND vehiculo IS NULL\r\n    AND patente IS NULL\r\n)");
+                    table.PrimaryKey("PK_movilizadores", x => x.id);
                     table.ForeignKey(
-                        name: "FK_asignaciones_personas_persona_id",
+                        name: "FK_movilizadores_personas_persona_id",
                         column: x => x.persona_id,
                         principalTable: "personas",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_asignaciones_referentes_referente_id",
+                        name: "FK_movilizadores_referentes_referente_id",
                         column: x => x.referente_id,
                         principalTable: "referentes",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "asignaciones_votantes",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    persona_id = table.Column<int>(type: "integer", nullable: false),
+                    movilizador_id = table.Column<int>(type: "integer", nullable: false),
+                    fecha_asignacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    activo = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_asignaciones_votantes", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_asignaciones_votantes_movilizadores_movilizador_id",
+                        column: x => x.movilizador_id,
+                        principalTable: "movilizadores",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_asignaciones_votantes_personas_persona_id",
+                        column: x => x.persona_id,
+                        principalTable: "personas",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
-                name: "IX_asignaciones_persona_id",
-                table: "asignaciones",
+                name: "IX_asignaciones_votantes_movilizador_id",
+                table: "asignaciones_votantes",
+                column: "movilizador_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_asignaciones_votantes_persona_id",
+                table: "asignaciones_votantes",
                 column: "persona_id",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_asignaciones_referente_id",
-                table: "asignaciones",
+                name: "IX_movilizadores_persona_id",
+                table: "movilizadores",
+                column: "persona_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_movilizadores_referente_id",
+                table: "movilizadores",
                 column: "referente_id");
 
             migrationBuilder.CreateIndex(
@@ -119,7 +159,10 @@ namespace SGE.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "asignaciones");
+                name: "asignaciones_votantes");
+
+            migrationBuilder.DropTable(
+                name: "movilizadores");
 
             migrationBuilder.DropTable(
                 name: "referentes");

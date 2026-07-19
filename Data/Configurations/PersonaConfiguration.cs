@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SGE.Models;
+using SGE.Models.Entities;
 
 namespace SGE.Data.Configurations;
 
-public class PersonaConfiguration : IEntityTypeConfiguration<Persona>
+public class PersonaConfiguration
+    : IEntityTypeConfiguration<Persona>
 {
     public void Configure(EntityTypeBuilder<Persona> builder)
     {
