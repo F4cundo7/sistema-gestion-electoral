@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-namespace Gestor_Digital_de_Votantes.Models;
+namespace SGE.Models.Entities;
 
 [Table("referentes")]
 public class Referente
@@ -11,10 +10,10 @@ public class Referente
     public int Id { get; set; }
 
     [Required]
-    [Column("persona_dni")]
-    public long PersonaDni { get; set; }
+    [Column("persona_id")]
+    public int PersonaId { get; set; }
 
-    [ForeignKey(nameof(PersonaDni))]
+    [ForeignKey(nameof(PersonaId))]
     public Persona Persona { get; set; } = null!;
 
     [MaxLength(30)]
@@ -28,9 +27,10 @@ public class Referente
     [Column("fecha_alta")]
     public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
 
-    [Column("activo")]
+   [Column("activo")]
     public bool Activo { get; set; } = true;
 
-    public ICollection<Asignacion> Asignaciones { get; set; }
-        = new List<Asignacion>();
+    public ICollection<Movilizador> Movilizadores { get; set; }
+        = new List<Movilizador>();
 }
+    

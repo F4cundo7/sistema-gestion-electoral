@@ -1,16 +1,23 @@
-using Gestor_Digital_de_Votantes.Data;
 using Microsoft.EntityFrameworkCore;
+using SGE.Data;
+using SGE.Repositories;
+using SGE.Services;
+using SGE.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();
+builder.Services.AddScoped<IReferenteRepository, ReferenteRepository>();
 
+builder.Services.AddScoped<IPadronImportService, PadronImportService>();
+builder.Services.AddScoped<IReferenteService, ReferenteService>();builder.Services.AddScoped<IMovilizadorRepository, MovilizadorRepository>();
+builder.Services.AddScoped<IAsignacionVotanteRepository,AsignacionVotanteRepository>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

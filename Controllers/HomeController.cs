@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Gestor_Digital_de_Votantes.Models;
+using SGE.Models;
 
-namespace Gestor_Digital_de_Votantes.Controllers;
+namespace SGE.Controllers;
 
 public class HomeController : Controller
 {

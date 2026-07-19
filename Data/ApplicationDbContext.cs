@@ -1,7 +1,7 @@
-using Gestor_Digital_de_Votantes.Models;
 using Microsoft.EntityFrameworkCore;
+using SGE.Models.Entities;
 
-namespace Gestor_Digital_de_Votantes.Data;
+namespace SGE.Data;
 
 public class ApplicationDbContext : DbContext
 {
@@ -13,27 +13,15 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Persona> Personas => Set<Persona>();
     public DbSet<Referente> Referentes => Set<Referente>();
-    public DbSet<Asignacion> Asignaciones => Set<Asignacion>();
+    public DbSet<Movilizador> Movilizadores => Set<Movilizador>();
+    public DbSet<AsignacionVotante> AsignacionesVotantes
+        => Set<AsignacionVotante>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Persona>()
-            .Property(p => p.Dni)
-            .ValueGeneratedNever();
-
-        modelBuilder.Entity<Referente>()
-            .HasIndex(r => r.PersonaDni)
-            .IsUnique();
-
-        modelBuilder.Entity<Asignacion>()
-            .HasIndex(a => a.PersonaDni)
-            .IsUnique();
-
-        modelBuilder.Entity<Asignacion>()
-            .Property(a => a.Rol)
-            .HasConversion<string>()
-            .HasMaxLength(20);
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(ApplicationDbContext).Assembly);
     }
 }
