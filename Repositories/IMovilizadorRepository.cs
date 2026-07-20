@@ -8,12 +8,19 @@ public interface IMovilizadorRepository
         int personaId,
         CancellationToken cancellationToken = default);
 
-    Task<Movilizador?> ObtenerPorIdAsync(
-        int id,
+    Task<List<Movilizador>> ObtenerTodosAsync(
         CancellationToken cancellationToken = default);
 
     Task<List<Movilizador>> ObtenerPorReferenteAsync(
         int referenteId,
+        CancellationToken cancellationToken = default);
+
+    Task<Movilizador?> ObtenerPorDniAsync(
+        long dni,
+        CancellationToken cancellationToken = default);
+
+    Task<Movilizador?> ObtenerParaEditarPorDniAsync(
+        long dni,
         CancellationToken cancellationToken = default);
 
     Task AgregarAsync(

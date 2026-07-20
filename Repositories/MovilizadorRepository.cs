@@ -8,7 +8,8 @@ public class MovilizadorRepository : IMovilizadorRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public MovilizadorRepository(ApplicationDbContext context)
+    public MovilizadorRepository(
+        ApplicationDbContext context)
     {
         _context = context;
     }
@@ -23,17 +24,18 @@ public class MovilizadorRepository : IMovilizadorRepository
                 cancellationToken);
     }
 
-    public async Task<Movilizador?> ObtenerPorIdAsync(
-        int id,
+    public async Task<List<Movilizador>> ObtenerTodosAsync(
         CancellationToken cancellationToken = default)
     {
         return await _context.Movilizadores
+            .AsNoTracking()
             .Include(movilizador => movilizador.Persona)
             .Include(movilizador => movilizador.Referente)
                 .ThenInclude(referente => referente.Persona)
-            .FirstOrDefaultAsync(
-                movilizador => movilizador.Id == id,
-                cancellationToken);
+            .Include(movilizador => movilizador.Votantes)
+            .OrderBy(movilizador =>
+                movilizador.Persona.ApellidoNombre)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<List<Movilizador>> ObtenerPorReferenteAsync(
@@ -43,11 +45,42 @@ public class MovilizadorRepository : IMovilizadorRepository
         return await _context.Movilizadores
             .AsNoTracking()
             .Include(movilizador => movilizador.Persona)
+            .Include(movilizador => movilizador.Referente)
+                .ThenInclude(referente => referente.Persona)
+            .Include(movilizador => movilizador.Votantes)
             .Where(movilizador =>
                 movilizador.ReferenteId == referenteId)
             .OrderBy(movilizador =>
                 movilizador.Persona.ApellidoNombre)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Movilizador?> ObtenerPorDniAsync(
+        long dni,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Movilizadores
+            .AsNoTracking()
+            .Include(movilizador => movilizador.Persona)
+            .Include(movilizador => movilizador.Referente)
+                .ThenInclude(referente => referente.Persona)
+            .Include(movilizador => movilizador.Votantes)
+            .FirstOrDefaultAsync(
+                movilizador => movilizador.Persona.Dni == dni,
+                cancellationToken);
+    }
+
+    public async Task<Movilizador?> ObtenerParaEditarPorDniAsync(
+        long dni,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Movilizadores
+            .Include(movilizador => movilizador.Persona)
+            .Include(movilizador => movilizador.Referente)
+                .ThenInclude(referente => referente.Persona)
+            .FirstOrDefaultAsync(
+                movilizador => movilizador.Persona.Dni == dni,
+                cancellationToken);
     }
 
     public async Task AgregarAsync(
