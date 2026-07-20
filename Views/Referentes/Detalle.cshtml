@@ -1,0 +1,294 @@
+@{
+    ViewData["Title"] = "Detalle del referente";
+}
+
+<section class="referente-detalle">
+
+    <div class="page-header">
+        <div>
+            <a asp-controller="Referentes"
+               asp-action="Index"
+               class="page-back-link">
+                <i class="bi bi-arrow-left"></i>
+                Volver a referentes
+            </a>
+
+            <h2 class="page-title">Detalle del referente</h2>
+            <p class="page-subtitle">
+                Consultá los datos personales, sus movilizadores y la cantidad de votantes asignados.
+            </p>
+        </div>
+
+        <div class="page-header-actions">
+            <a asp-controller="Referentes"
+                asp-action="Editar"
+                class="btn btn-outline-primary">
+                 <i class="bi bi-pencil"></i>
+                 Editar
+            </a>
+
+            <button type="button" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i>
+                Agregar movilizador
+            </button>
+        </div>
+    </div>
+
+    <div class="referente-profile-card">
+
+        <div class="referente-profile-main">
+            <div class="referente-avatar">
+                JP
+            </div>
+
+            <div>
+                <div class="referente-profile-heading">
+                    <h3>Juan Pérez</h3>
+                    <span class="status-badge status-active">
+                        Activo
+                    </span>
+                </div>
+
+                <p>
+                    <i class="bi bi-person-badge"></i>
+                    Referente
+                </p>
+            </div>
+        </div>
+
+        <div class="referente-profile-stats">
+            <div>
+                <span class="stat-label">Movilizadores</span>
+                <strong>3</strong>
+            </div>
+
+            <div>
+                <span class="stat-label">Votantes</span>
+                <strong>69</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="referente-detail-grid">
+
+        <article class="detail-card">
+            <div class="detail-card-header">
+                <h3>
+                    <i class="bi bi-person-vcard"></i>
+                    Datos personales
+                </h3>
+            </div>
+
+            <div class="detail-list">
+                <div class="detail-item">
+                    <span>DNI</span>
+                    <strong>30.111.222</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Teléfono</span>
+                    <strong>381 555-1234</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Localidad</span>
+                    <strong>San Miguel de Tucumán</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Domicilio</span>
+                    <strong>Av. Siempre Viva 123</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Circuito</span>
+                    <strong>12A</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Escuela</span>
+                    <strong>Escuela Normal</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Mesa</span>
+                    <strong>145</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="detail-card">
+            <div class="detail-card-header">
+                <h3>
+                    <i class="bi bi-car-front"></i>
+                    Datos como movilizador
+                </h3>
+            </div>
+
+            <div class="detail-highlight">
+                <i class="bi bi-check-circle-fill"></i>
+                Este referente también realiza traslados.
+            </div>
+
+            <div class="detail-list">
+                <div class="detail-item">
+                    <span>Tipo de vehículo</span>
+                    <strong>Auto</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Patente</span>
+                    <strong>AB 123 CD</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span>Votantes propios</span>
+                    <strong>12</strong>
+                </div>
+            </div>
+        </article>
+
+    </div>
+
+    <article class="detail-card movilizadores-card">
+
+        <div class="detail-card-header detail-card-header-row">
+            <div>
+                <h3>
+                    <i class="bi bi-people"></i>
+                    Movilizadores
+                </h3>
+                <p>Personas que dependen de este referente.</p>
+            </div>
+
+            <button type="button" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i>
+                Agregar movilizador
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table movilizadores-table">
+                <thead>
+                    <tr>
+                        <th>Movilizador</th>
+                        <th>DNI</th>
+                        <th>Vehículo</th>
+                        <th>Patente</th>
+                        <th>Votantes</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="table-person">
+                                <div class="table-avatar">CH</div>
+                                <div>
+                                    <strong>Carlos Herrera</strong>
+                                    <span>San Miguel de Tucumán</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>28.456.789</td>
+                        <td>Auto</td>
+                        <td>AA 123 BB</td>
+                        <td>
+                            <span class="count-badge">18</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-active">
+                                Activo
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                                Ver
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div class="table-person">
+                                <div class="table-avatar">MG</div>
+                                <div>
+                                    <strong>María Gómez</strong>
+                                    <span>Yerba Buena</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>31.222.333</td>
+                        <td>Auto</td>
+                        <td>AE 456 FG</td>
+                        <td>
+                            <span class="count-badge">25</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-active">
+                                Activo
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                                Ver
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <div class="table-person">
+                                <div class="table-avatar">PR</div>
+                                <div>
+                                    <strong>Pedro Ruiz</strong>
+                                    <span>Tafí Viejo</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>29.888.777</td>
+                        <td>Moto</td>
+                        <td>A 123 ABC</td>
+                        <td>
+                            <span class="count-badge">14</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-active">
+                                Activo
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                                Ver
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </article>
+
+    <article class="detail-card observations-card">
+        <div class="detail-card-header">
+            <h3>
+                <i class="bi bi-chat-left-text"></i>
+                Observaciones
+            </h3>
+        </div>
+
+        <p>
+            Referente responsable de la zona centro. Mantiene contacto permanente con sus movilizadores.
+        </p>
+    </article>
+
+</section>

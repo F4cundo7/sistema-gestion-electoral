@@ -1,0 +1,16 @@
+@model SGE.ViewModels.Shared.StatusBadgeViewModel
+
+@if (Model.Activo)
+{
+    <span class="status-badge status-badge-success">
+        <i class="bi bi-check-circle"></i>
+        @Model.TextoActivo
+    </span>
+}
+else
+{
+    <span class="status-badge status-badge-warning">
+        <i class="bi bi-pause-circle"></i>
+        @Model.TextoInactivo
+    </span>
+}

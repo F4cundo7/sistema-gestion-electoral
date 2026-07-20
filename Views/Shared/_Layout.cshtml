@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/referentes.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/movilizadores.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/reportes.css" asp-append-version="true" />
 
 <link rel="stylesheet"
@@ -31,11 +32,11 @@
         <aside class="app-sidebar">
             <div class="sidebar-brand">
                 <a asp-controller="Home"
-                    asp-action="Index"
-                    class="sidebar-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
-                    <i class="bi bi-grid"></i>
-                    <span>Dashboard</span>
-                </a>    
+                asp-action="Index"
+                class="sidebar-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
+                <i class="bi bi-check2-square"></i>
+                <span>SGE</span>
+                </a>
             </div>
 
             <nav class="sidebar-navigation" aria-label="Navegación principal">
@@ -48,18 +49,22 @@
                     </li>
 
                     <li>
-                        <a href="#" class="sidebar-link">
-                            <i class="bi bi-person-badge"></i>
-                            <span>Referentes</span>
+                        <a asp-controller="Referentes"
+                        asp-action="Index"
+                        class="sidebar-link @(currentController == "Referentes" ? "active" : "")">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Referentes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#"
+                        class="sidebar-link @(currentController == "Movilizadores" ? "active" : "")">
+                        <i class="bi bi-car-front"></i>
+                        <span>Movilizadores</span>
                         </a>
                     </li>
 
-                    <li>
-                        <a href="#" class="sidebar-link">
-                            <i class="bi bi-people"></i>
-                            <span>Asignaciones</span>
-                        </a>
-                    </li>
+                    
 
                     <li>
                         <a href="#" class="sidebar-link">

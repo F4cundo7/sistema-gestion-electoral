@@ -1,3 +1,4 @@
+@model List<SGE.ViewModels.Referentes.ReferenteListadoViewModel>
 @{
     ViewData["Title"] = "Referentes";
 }
@@ -5,23 +6,29 @@
 <section class="page-header">
     <div>
         <h2 class="page-title">Referentes</h2>
+
         <p class="page-description">
-            Administración de las personas registradas como referentes.
+            Administración de referentes, movilizadores y votantes asociados.
         </p>
     </div>
 
-    <button type="button" class="btn btn-primary">
+    <a asp-controller="Referentes"
+       asp-action="Nuevo"
+       class="btn btn-primary">
         <i class="bi bi-person-plus me-2"></i>
-        Agregar referente
-    </button>
+        Registrar referente
+    </a>
 </section>
 
 <section class="content-card">
     <div class="content-card-header">
         <div>
-            <h3 class="content-card-title">Listado de referentes</h3>
+            <h3 class="content-card-title">
+                Listado de referentes
+            </h3>
+
             <p class="content-card-description">
-                Buscá un referente por DNI, nombre o localidad.
+                Buscá por DNI, nombre o localidad.
             </p>
         </div>
 
@@ -29,6 +36,7 @@
             <i class="bi bi-search"></i>
 
             <input type="search"
+                   id="buscarReferente"
                    class="form-control"
                    placeholder="Buscar referente..."
                    aria-label="Buscar referente" />
@@ -42,24 +50,134 @@
                     <th scope="col">DNI</th>
                     <th scope="col">Apellido y nombre</th>
                     <th scope="col">Localidad</th>
-                    <th scope="col">Asignados</th>
+                    <th scope="col">Movilizadores</th>
+                    <th scope="col">Votantes</th>
+                    <th scope="col">Estado</th>
                     <th scope="col" class="text-end">Acciones</th>
                 </tr>
             </thead>
 
             <tbody>
-                <tr>
-                    <td colspan="5">
-                        <div class="table-empty-state">
-                            <i class="bi bi-person-badge"></i>
-                            <strong>No hay referentes registrados</strong>
-                            <span>
-                                Los referentes aparecerán aquí cuando sean incorporados al sistema.
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+
+@foreach (var referente in Model)
+{
+    <tr>
+
+        <td>@referente.Dni</td>
+
+        <td>
+            <div class="referente-persona">
+
+                <div class="referente-avatar">
+                    @referente.ApellidoNombre.Substring(0, 1)
+                </div>
+
+                <div>
+                    <strong>@referente.ApellidoNombre</strong>
+                    <span>Referente</span>
+                </div>
+
+            </div>
+        </td>
+
+        <td>
+            @referente.Localidad
+        </td>
+
+        <td>
+
+            <span class="status-badge status-badge-primary">
+                <i class="bi bi-person-vcard"></i>
+                @referente.CantidadMovilizadores movilizadores
+            </span>
+
+        </td>
+
+        <td>
+
+            <span class="status-badge status-badge-success">
+                <i class="bi bi-people"></i>
+                @referente.CantidadVotantes votantes
+            </span>
+
+        </td>
+
+        <td>
+
+            <partial name="Components/_StatusBadge"
+                     model="new SGE.ViewModels.Shared.StatusBadgeViewModel
+                     {
+                         Activo = referente.Activo
+                     }" />
+
+        </td>
+
+        <td class="text-end">
+
+            <div class="table-actions">
+
+                <a asp-controller="Referentes"
+                   asp-action="Detalle"
+                   class="btn btn-outline-primary btn-icon">
+
+                    <i class="bi bi-eye"></i>
+
+                </a>
+
+                <button type="button"
+                        class="btn btn-outline-secondary btn-icon">
+
+                    <i class="bi bi-person-lines-fill"></i>
+
+                </button>
+
+            </div>
+
+        </td>
+
+    </tr>
+}
+
+</tbody>
         </table>
     </div>
+
+    <div class="content-card-footer">
+        <span class="table-summary">
+            Mostrando 3 referentes de ejemplo
+        </span>
+
+        <nav aria-label="Paginación de referentes">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled">
+                    <button class="page-link" type="button">
+                        Anterior
+                    </button>
+                </li>
+
+                <li class="page-item active">
+                    <button class="page-link" type="button">
+                        1
+                    </button>
+                </li>
+
+                <li class="page-item">
+                    <button class="page-link" type="button">
+                        2
+                    </button>
+                </li>
+
+                <li class="page-item">
+                    <button class="page-link" type="button">
+                        Siguiente
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/referentes.js"
+            asp-append-version="true"></script>
+}

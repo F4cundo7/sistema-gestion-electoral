@@ -1,0 +1,329 @@
+@{
+    ViewData["Title"] = "Nuevo Referente";
+}
+
+<section class="page-header">
+    <div>
+        <a asp-controller="Referentes"
+        asp-action="Index"
+        class="page-back-link">
+            <i class="bi bi-arrow-left"></i>
+            Volver a Referentes
+        </a>
+
+        <h2 class="page-title mt-3">Registrar referente</h2>
+
+        <p class="page-description">
+            Buscá una persona existente en el padrón y confirmá su registro como referente.
+        </p>
+    </div>
+</section>
+
+<section class="wizard-card">
+    <div class="wizard-steps" aria-label="Progreso del registro">
+        <div class="wizard-step active">
+            <span class="wizard-step-number">1</span>
+
+            <div>
+                <strong>Buscar persona</strong>
+                <span>Ingresar DNI</span>
+            </div>
+        </div>
+
+        <div class="wizard-step-line"></div>
+
+        <div class="wizard-step">
+            <span class="wizard-step-number">2</span>
+
+            <div>
+                <strong>Confirmar datos</strong>
+                <span>Revisar padrón</span>
+            </div>
+        </div>
+
+        <div class="wizard-step-line"></div>
+
+        <div class="wizard-step">
+            <span class="wizard-step-number">3</span>
+
+            <div>
+                <strong>Finalizar</strong>
+                <span>Registrar referente</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-content">
+        <div class="wizard-section-header">
+            <div class="wizard-section-icon">
+                <i class="bi bi-search"></i>
+            </div>
+
+            <div>
+                <h3>Buscar persona en el padrón</h3>
+
+                <p>
+                    La persona debe existir previamente en el padrón electoral.
+                </p>
+            </div>
+        </div>
+
+        <div class="wizard-search">
+            <div class="flex-grow-1">
+                <label for="dniNuevoReferente" class="form-label">
+                    DNI
+                </label>
+
+                <input type="text"
+                       id="dniNuevoReferente"
+                       class="form-control form-control-lg"
+                       placeholder="Ingresá el DNI sin puntos"
+                       inputmode="numeric"
+                       maxlength="8"
+                       autocomplete="off" />
+
+                <div class="form-text">
+                    Ingresá únicamente números.
+                </div>
+            </div>
+
+            <button type="button"
+                    id="btnBuscarPersona"
+                    class="btn btn-primary btn-lg">
+                <i class="bi bi-search me-2"></i>
+                Buscar persona
+            </button>
+        </div>
+
+        <div id="estadoBusqueda" class="search-feedback d-none" role="status">
+        </div>
+
+        <section id="personaEncontrada" class="person-result d-none">
+            <div class="person-result-header">
+                <div>
+                    <span class="status-badge status-badge-success">
+                        <i class="bi bi-check-circle"></i>
+                        Persona encontrada
+                    </span>
+
+                    <h3>María Acosta</h3>
+
+                    <p>
+                        Verificá los datos antes de continuar.
+                    </p>
+                </div>
+
+                <div class="person-result-avatar">
+                    MA
+                </div>
+            </div>
+
+            <div class="person-data-grid">
+                <div class="person-data-item">
+                    <span>DNI</span>
+                    <strong>30111222</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Sexo</span>
+                    <strong>Femenino</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Localidad</span>
+                    <strong>San Miguel de Tucumán</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Departamento</span>
+                    <strong>Capital</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Circuito</span>
+                    <strong>Capital 01</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Escuela</span>
+                    <strong>Escuela N.º 45</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Mesa</span>
+                    <strong>105</strong>
+                </div>
+
+                <div class="person-data-item">
+                    <span>Domicilio</span>
+                    <strong>Av. Belgrano 240</strong>
+                </div>
+            </div>
+
+            <div class="read-only-notice">
+                <i class="bi bi-lock"></i>
+
+                <span>
+                    Los datos del padrón son de solo lectura y no pueden modificarse desde el sistema.
+                </span>
+            </div>
+        </section>
+
+        <section id="datosReferente" class="representative-form d-none">
+            <div class="section-divider"></div>
+
+            <div class="wizard-section-header">
+                <div class="wizard-section-icon">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+
+                <div>
+                    <h3>Información del referente</h3>
+
+                    <p>
+                        Completá únicamente los datos propios del sistema.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-lg-6">
+                    <label for="telefonoReferente" class="form-label">
+                        Teléfono
+                    </label>
+
+                    <input type="tel"
+                           id="telefonoReferente"
+                           class="form-control"
+                           placeholder="Ejemplo: 381 555-1234" />
+                </div>
+
+                <div class="col-12">
+                    <label for="observacionesReferente" class="form-label">
+                        Observaciones
+                    </label>
+
+                    <textarea id="observacionesReferente"
+                              class="form-control"
+                              rows="4"
+                              placeholder="Información adicional opcional"></textarea>
+                </div>
+                <div class="col-12">
+    <div class="role-option-card">
+        <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   role="switch"
+                   id="esMovilizador" />
+
+            <label class="form-check-label" for="esMovilizador">
+                Este referente también será movilizador
+            </label>
+        </div>
+
+        <p class="role-option-description">
+            Si activás esta opción, el referente podrá tener sus propios
+            votantes y también continuar administrando otros movilizadores.
+        </p>
+    </div>
+</div>
+            </div>
+            <section id="datosMovilizadorReferente"
+         class="representative-vehicle-section d-none">
+
+    <div class="section-divider"></div>
+
+    <div class="wizard-section-header">
+        <div class="wizard-section-icon">
+            <i class="bi bi-car-front"></i>
+        </div>
+
+        <div>
+            <h3>Datos como movilizador</h3>
+
+            <p>
+                Indicá el tipo de vehículo y la patente que utilizará.
+            </p>
+        </div>
+    </div>
+
+    <div class="help-box mb-4">
+        <div class="help-box-icon">
+            <i class="bi bi-info-circle"></i>
+        </div>
+
+        <div class="help-box-content">
+            <strong class="help-box-title">
+                Información obligatoria
+            </strong>
+
+            <span>
+                Todo movilizador debe tener un vehículo y una patente registrados.
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <label for="tipoVehiculoReferente" class="form-label">
+                Tipo de vehículo
+            </label>
+
+            <select id="tipoVehiculoReferente"
+                    class="form-select">
+                <option value="">
+                    Seleccioná un tipo de vehículo
+                </option>
+
+                <option value="Auto">
+                    Auto
+                </option>
+
+                <option value="Moto">
+                    Moto
+                </option>
+            </select>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <label for="patenteReferente" class="form-label">
+                Patente
+            </label>
+
+            <input type="text"
+                   id="patenteReferente"
+                   class="form-control text-uppercase"
+                   placeholder="Ejemplo: AB123CD"
+                   maxlength="10"
+                   autocomplete="off" />
+
+            <div class="form-text">
+                Ingresá la patente sin espacios innecesarios.
+            </div>
+        </div>
+    </div>
+</section>
+        </section>
+    </div>
+
+    <div class="wizard-footer">
+        <a asp-controller="Referentes"
+        asp-action="Index"
+        class="btn btn-outline-secondary">
+        Cancelar
+        </a>
+
+        <button type="button"
+                id="btnRegistrarReferente"
+                class="btn btn-primary"
+                disabled>
+            <i class="bi bi-check2-circle me-2"></i>
+            Registrar referente
+        </button>
+    </div>
+</section>
+@section Scripts {
+    <script src="~/js/referentes.js"
+            asp-append-version="true"></script>
+}
+
