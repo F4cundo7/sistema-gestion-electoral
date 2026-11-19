@@ -10,18 +10,20 @@ public class AsignacionVotanteConfiguration
     public void Configure(
         EntityTypeBuilder<AsignacionVotante> builder)
     {
-        builder.HasIndex(asignacion => asignacion.PersonaId)
-            .IsUnique();
+        builder.HasKey(x => x.Id);
 
-        builder.HasOne(asignacion => asignacion.Persona)
-            .WithOne(persona => persona.AsignacionVotante)
-            .HasForeignKey<AsignacionVotante>(
-                asignacion => asignacion.PersonaId)
+        builder.HasIndex(x => x.PersonaId)
+            .IsUnique()
+            .HasFilter("activo = true");
+
+        builder.HasOne(x => x.Persona)
+            .WithMany()
+            .HasForeignKey(x => x.PersonaId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(asignacion => asignacion.Movilizador)
-            .WithMany(movilizador => movilizador.Votantes)
-            .HasForeignKey(asignacion => asignacion.MovilizadorId)
+        builder.HasOne(x => x.Movilizador)
+            .WithMany(x => x.Votantes)
+            .HasForeignKey(x => x.MovilizadorId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

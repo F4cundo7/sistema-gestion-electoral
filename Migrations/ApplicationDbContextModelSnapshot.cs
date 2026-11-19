@@ -47,11 +47,18 @@ namespace SGE.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("persona_id");
 
+                    b.Property<int?>("PersonaId1")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MovilizadorId");
 
                     b.HasIndex("PersonaId")
+                        .IsUnique()
+                        .HasFilter("activo = true");
+
+                    b.HasIndex("PersonaId1")
                         .IsUnique();
 
                     b.ToTable("asignaciones_votantes");
@@ -241,10 +248,14 @@ namespace SGE.Migrations
                         .IsRequired();
 
                     b.HasOne("SGE.Models.Entities.Persona", "Persona")
-                        .WithOne("AsignacionVotante")
-                        .HasForeignKey("SGE.Models.Entities.AsignacionVotante", "PersonaId")
+                        .WithMany()
+                        .HasForeignKey("PersonaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SGE.Models.Entities.Persona", null)
+                        .WithOne("AsignacionVotante")
+                        .HasForeignKey("SGE.Models.Entities.AsignacionVotante", "PersonaId1");
 
                     b.Navigation("Movilizador");
 

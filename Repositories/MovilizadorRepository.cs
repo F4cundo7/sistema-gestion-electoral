@@ -8,8 +8,7 @@ public class MovilizadorRepository : IMovilizadorRepository
 {
     private readonly ApplicationDbContext _context;
 
-    public MovilizadorRepository(
-        ApplicationDbContext context)
+    public MovilizadorRepository(ApplicationDbContext context)
     {
         _context = context;
     }
@@ -33,8 +32,7 @@ public class MovilizadorRepository : IMovilizadorRepository
             .Include(movilizador => movilizador.Referente)
                 .ThenInclude(referente => referente.Persona)
             .Include(movilizador => movilizador.Votantes)
-            .OrderBy(movilizador =>
-                movilizador.Persona.ApellidoNombre)
+            .OrderBy(movilizador => movilizador.Persona.ApellidoNombre)
             .ToListAsync(cancellationToken);
     }
 
@@ -48,10 +46,8 @@ public class MovilizadorRepository : IMovilizadorRepository
             .Include(movilizador => movilizador.Referente)
                 .ThenInclude(referente => referente.Persona)
             .Include(movilizador => movilizador.Votantes)
-            .Where(movilizador =>
-                movilizador.ReferenteId == referenteId)
-            .OrderBy(movilizador =>
-                movilizador.Persona.ApellidoNombre)
+            .Where(movilizador => movilizador.ReferenteId == referenteId)
+            .OrderBy(movilizador => movilizador.Persona.ApellidoNombre)
             .ToListAsync(cancellationToken);
     }
 
@@ -95,7 +91,6 @@ public class MovilizadorRepository : IMovilizadorRepository
     public async Task<int> GuardarCambiosAsync(
         CancellationToken cancellationToken = default)
     {
-        return await _context.SaveChangesAsync(
-            cancellationToken);
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 }
