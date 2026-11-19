@@ -15,6 +15,7 @@ appsettings.Development.json
 
 # Logs
 *.log
+*.xlsx
 
 # Sistema operativo
 .DS_Store

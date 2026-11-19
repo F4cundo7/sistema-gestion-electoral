@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Gestor_Digital_de_Votantes</RootNamespace>
+    <RootNamespace>SGE</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
