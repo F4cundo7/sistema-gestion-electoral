@@ -1,67 +1,124 @@
 using Microsoft.AspNetCore.Mvc;
-using SGE.ViewModels.Referentes;
+using SGE.DTOs.Referentes;
+using SGE.Services.Interfaces;
 
 namespace SGE.Controllers;
 
 public class ReferentesController : Controller
 {
-    [HttpGet]
-public IActionResult Index()
-{
-    var referentes = new List<ReferenteListadoViewModel>
+    private readonly IReferenteService _referenteService;
+
+    public ReferentesController(IReferenteService referenteService)
     {
-        new()
-        {
-            Id = 1,
-            Dni = 30111222,
-            ApellidoNombre = "María Acosta",
-            Localidad = "San Miguel de Tucumán",
-            CantidadMovilizadores = 4,
-            CantidadVotantes = 24,
-            Activo = true
-        },
+        _referenteService = referenteService;
+    }
 
-        new()
-        {
-            Id = 2,
-            Dni = 27888999,
-            ApellidoNombre = "Juan Rodríguez",
-            Localidad = "Yerba Buena",
-            CantidadMovilizadores = 3,
-            CantidadVotantes = 16,
-            Activo = true
-        },
+    [HttpGet]
+    public async Task<IActionResult> Index(
+        CancellationToken cancellationToken)
+    {
+        var referentes = await _referenteService.ObtenerTodosAsync(
+            cancellationToken);
 
-        new()
+        return View(referentes);
+    }
+    [HttpGet]
+    public async Task<IActionResult> Detalle(
+        long dni,
+        CancellationToken cancellationToken)
+    {
+        var referente = await _referenteService.ObtenerDetallePorDniAsync(
+            dni,
+            cancellationToken);
+
+        if (referente is null)
         {
-            Id = 3,
-            Dni = 32555666,
-            ApellidoNombre = "Laura Gómez",
-            Localidad = "Tafí Viejo",
-            CantidadMovilizadores = 2,
-            CantidadVotantes = 11,
-            Activo = false
+            return NotFound();
         }
-    };
 
-    return View(referentes);
+        return View(referente);
+    }
+    [HttpGet]
+public async Task<IActionResult> Editar(
+    long dni,
+    CancellationToken cancellationToken)
+{
+    var referente =
+        await _referenteService.ObtenerParaEditarPorDniAsync(
+            dni,
+            cancellationToken);
+
+    if (referente is null)
+    {
+        return NotFound();
+    }
+
+    return View(referente);
 }
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Editar(
+    EditarReferenteDto dto,
+    CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(dto);
+        }
+
+        var resultado = await _referenteService.EditarAsync(
+            dto,
+            cancellationToken);
+
+        if (!resultado.Exito)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                resultado.Mensaje);
+
+            return View(dto);
+        }
+
+        TempData["MensajeExito"] = resultado.Mensaje;
+
+        return RedirectToAction(
+            nameof(Detalle),
+            new { dni = dto.Dni });
+    }
 
     [HttpGet]
     public IActionResult Nuevo()
     {
-        return View();
+        return View(new CrearReferenteDto());
     }
 
-    [HttpGet]
-    public IActionResult Detalle()
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Nuevo(
+        CrearReferenteDto dto,
+        CancellationToken cancellationToken)
     {
-        return View();
-    }
-    
-    [HttpGet]
-    public IActionResult Editar()
-    {
-        return View();
+        if (!ModelState.IsValid)
+        {
+            return View(dto);
+        }
+
+        var resultado = await _referenteService.CrearAsync(
+            dto,
+            cancellationToken);
+
+        if (!resultado.Exito)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                resultado.Mensaje);
+
+            return View(dto);
+        }
+
+        TempData["MensajeExito"] = resultado.Mensaje;
+
+        return RedirectToAction(nameof(Index));
     }
 }
